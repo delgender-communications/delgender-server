@@ -1,3 +1,6 @@
 <Solution>
+  <Project Path="Application/Application.csproj" />
+  <Project Path="Core/Core.csproj" />
   <Project Path="DelgenderCommunicationsAPI/DelgenderCommunicationsAPI.csproj" />
+  <Project Path="Infrastructure/Infrastructure.csproj" />
 </Solution>
