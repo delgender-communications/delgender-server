@@ -135,13 +135,12 @@ try
     app.UseRateLimiter();
 
     app.MapControllers();
-    app.MapHealthChecks("/health");
 
     app.Run();
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "Application failed to start.");
+    Console.WriteLine(ex.ToString());
 }
 finally
 {
