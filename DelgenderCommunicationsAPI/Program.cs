@@ -1,4 +1,3 @@
-using Core.Configuration;
 using Core.Interfaces.Repositories;
 using Core.Interfaces.Services;
 using DelgenderCommunicationsAPI.Filters;
@@ -11,6 +10,7 @@ using Serilog;
 using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Application.Services;
+using Resend;
 
 try
 {
@@ -25,12 +25,20 @@ try
     builder.Services.AddScoped<IConfirmationRepository, ConfirmationRepository>();
 
     // Services
-    builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+    builder.Services.AddOptions();
+    builder.Services.AddHttpClient();
+
+    builder.Services.AddSingleton<IResend>(sp =>
+    {
+        var apiKey = builder.Configuration["RESEND_API_KEY"]
+            ?? throw new InvalidOperationException(
+                "RESEND_API_KEY is not configured.");
+
+        return ResendClient.Create(apiKey);
+    });
+
     builder.Services.AddScoped<IEmailService, EmailService>();
     builder.Services.AddScoped<IBookingService, BookingService>();
-
-    // JWT Authentication
-    // (add your JWT setup here)
 
     // Rate Limiting
     builder.Services.AddRateLimiter(options =>
@@ -141,5 +149,5 @@ catch (Exception ex)
 }
 finally
 {
-    Log.CloseAndFlush();
+    Serilog.Log.CloseAndFlush();
 }

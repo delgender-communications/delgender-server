@@ -1,53 +1,31 @@
-﻿using Core.Configuration;
-using Core.DTOs;
+﻿using Core.DTOs;
 using Core.Interfaces.Services;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using Microsoft.Extensions.Options;
-using MimeKit;
+using Resend;
 
 namespace Infrastructure.Services
 {
     public class EmailService : IEmailService
     {
-        private readonly EmailSettings _settings;
+        private readonly IResend _resend;
 
-        public EmailService(IOptions<EmailSettings> settings)
+        public EmailService(IResend resend)
         {
-            _settings = settings.Value;
+            _resend = resend;
         }
 
-        public async Task SendBookingConfirmationAsync(ConfirmationDto confirmation, string recipientEmail)
+        public async Task SendBookingConfirmationAsync(
+            ConfirmationDto confirmation,
+            string recipientEmail)
         {
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(_settings.SenderName, _settings.SenderEmail));
-            message.To.Add(MailboxAddress.Parse(recipientEmail));
-            message.Subject = "Your consultation booking is received";
-
-            message.Body = new TextPart("plain")
+            var message = new EmailMessage
             {
-                Text = BuildBody(confirmation)
+                From = "Delgender Communications <bookings@delgendercommunications.site>",
+                To = recipientEmail,
+                Subject = "Your consultation booking is received",
+                TextBody = BuildBody(confirmation)
             };
 
-            using var client = new SmtpClient();
-
-            try
-            {
-                Console.WriteLine("Connecting to Gmail SMTP...");
-                await client.ConnectAsync(_settings.SmtpHost, _settings.SmtpPort, SecureSocketOptions.StartTls);
-                Console.WriteLine("Connected to Gmail SMTP.");
-                await client.AuthenticateAsync(_settings.SenderEmail, _settings.SenderPassword);
-                Console.WriteLine("Authenticated with Gmail.");
-                await client.SendAsync(message);
-                Console.WriteLine("Email sent.");
-            }
-            finally
-            {
-                if (client.IsConnected)
-                {
-                    await client.DisconnectAsync(true);
-                }
-            }
+            await _resend.EmailSendAsync(message);
         }
 
         private static string BuildBody(ConfirmationDto confirmation)
