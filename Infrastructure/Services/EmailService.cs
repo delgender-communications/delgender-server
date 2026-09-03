@@ -1,4 +1,5 @@
 ﻿using Core.DTOs;
+using Core.Enums;
 using Core.Interfaces.Services;
 using Resend;
 
@@ -183,7 +184,7 @@ namespace Infrastructure.Services
                                                                     font-weight: bold;
                                                                     color: #111827;
                                                                 ">
-                                                                    {confirmation.Meeting}
+                                                                    {FormatMeetingType(confirmation.Meeting)}
                                                                 </td>
                                                             </tr>
 
@@ -309,7 +310,7 @@ namespace Infrastructure.Services
                                                     "
                                                 >
                                                     delgendercommunications@gmail.com
-                                                </a>.
+                                                </a>
                                             </p>
 
                                             <p style="
@@ -343,7 +344,7 @@ namespace Infrastructure.Services
 
                 BOOKING DETAILS
                 ----------------
-                Meeting type: {confirmation.Meeting}
+                Meeting type: {FormatMeetingType(confirmation.Meeting)}
                 Date: {confirmation.BookingDate:dddd, d MMMM yyyy}
                 Time: {confirmation.BookingTime:h:mm tt}
 
@@ -359,6 +360,17 @@ namespace Infrastructure.Services
 
                 © {DateTime.UtcNow.Year} Delgender Communications
                 """;
+        }
+
+        private static string FormatMeetingType(MeetingType meeting)
+        {
+            return meeting switch
+            {
+                MeetingType.InPerson => "In-person",
+                MeetingType.OnlineMeeting => "Online Meeting",
+                MeetingType.PhoneCall => "Phone Call",
+                _ => meeting.ToString()
+            };
         }
     }
 }
