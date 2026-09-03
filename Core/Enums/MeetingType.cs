@@ -3,7 +3,7 @@
     public enum MeetingType
     {
         InPerson,
-        VideoCall,
+        OnlineMeeting,
         PhoneCall
     }
 }
