@@ -33,14 +33,20 @@ namespace Infrastructure.Services
 
             try
             {
+                Console.WriteLine("Connecting to Gmail SMTP...");
                 await client.ConnectAsync(_settings.SmtpHost, _settings.SmtpPort, SecureSocketOptions.StartTls);
+                Console.WriteLine("Connected to Gmail SMTP.");
                 await client.AuthenticateAsync(_settings.SenderEmail, _settings.SenderPassword);
+                Console.WriteLine("Authenticated with Gmail.");
                 await client.SendAsync(message);
+                Console.WriteLine("Email sent.");
             }
             finally
             {
                 if (client.IsConnected)
+                {
                     await client.DisconnectAsync(true);
+                }
             }
         }
 
