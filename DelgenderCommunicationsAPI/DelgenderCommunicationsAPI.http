@@ -1,0 +1,6 @@
+@DelgenderCommunicationsAPI_HostAddress = http://localhost:5289
+
+GET {{DelgenderCommunicationsAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
