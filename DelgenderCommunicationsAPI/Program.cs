@@ -107,8 +107,6 @@ try
                 "Cors:AllowedOrigin is not configured.");
         }
 
-        Console.WriteLine($"CORS allowed origin: {allowedOrigin}");
-
         options.AddPolicy("AllowFrontend", policy =>
             policy.WithOrigins(allowedOrigin)
                   .AllowAnyMethod()
