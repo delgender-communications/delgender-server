@@ -21,7 +21,6 @@ namespace Infrastructure.Services
             {
                 From = "Delgender Communications <bookings@delgendercommunications.site>",
                 To = recipientEmail,
-                ReplyTo = "delgendercommunications@gmail.com",
                 Subject = "Your consultation booking has been received",
                 HtmlBody = BuildHtmlBody(confirmation),
                 TextBody = BuildTextBody(confirmation)
