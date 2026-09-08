@@ -17,6 +17,9 @@ namespace Core.DTOs
         [Required, EmailAddress]
         public string Email { get; set; } = string.Empty;
 
+        [Required,StringLength(10)]
+        public string PhoneNumber {get; set;} = "";
+
         [Required, StringLength(100)]
         public string Industry { get; set; } = string.Empty;
 

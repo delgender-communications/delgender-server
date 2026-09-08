@@ -12,7 +12,8 @@ namespace Core.Entities
         public Booking Booking { get; set; } = null!;
 
         public ConfirmationStatus Status { get; set; } = ConfirmationStatus.Pending;
-        public DateTime? SentAt { get; set; }
+        public DateTime SentAt { get; set; }
+        public DateTime? UpdatedAt {get; set;}
         public string? FailureReason { get; set; }
     }
 }

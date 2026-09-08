@@ -88,6 +88,7 @@ try
 
     // Swagger / OpenAPI
     builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
 
     builder.Services.AddControllers(options =>
     {

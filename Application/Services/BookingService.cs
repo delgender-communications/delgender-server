@@ -22,12 +22,18 @@ namespace Application.Services
 
         public async Task<BookingDto> CreateAsync(CreateBookingDto dto)
         {
+            if (dto == null)
+            {
+                throw new ArgumentNullException(nameof(dto), "CreateBookingDto cannot be null.");
+            }
+
             var booking = new Booking
             {
                 FullName = dto.FullName,
                 JobTitle = dto.JobTitle,
                 CompanyName = dto.CompanyName,
                 Email = dto.Email,
+                PhoneNumber = dto.PhoneNumber,
                 Industry = dto.Industry,
                 HelpWith = dto.HelpWith,
                 ProblemDescription = dto.ProblemDescription,
@@ -35,7 +41,8 @@ namespace Application.Services
                 Meeting = dto.Meeting,
                 Date = dto.Date,
                 Time = dto.Time,
-                ContactPermission = dto.ContactPermission
+                ContactPermission = dto.ContactPermission,
+                CreatedAt = DateTime.UtcNow
             };
 
             booking = await _bookingRepository.CreateAsync(booking);
@@ -43,7 +50,8 @@ namespace Application.Services
             var confirmation = new Confirmation
             {
                 BookingId = booking.Id,
-                Status = ConfirmationStatus.Pending
+                Status = ConfirmationStatus.Pending,
+                SentAt = DateTime.UtcNow
             };
             confirmation = await _confirmationRepository.CreateAsync(confirmation);
 
@@ -109,6 +117,7 @@ namespace Application.Services
             JobTitle = booking.JobTitle,
             CompanyName = booking.CompanyName,
             Email = booking.Email,
+            PhoneNumber = booking.PhoneNumber,
             Industry = booking.Industry,
             HelpWith = booking.HelpWith,
             ProblemDescription = booking.ProblemDescription,
@@ -116,7 +125,9 @@ namespace Application.Services
             Meeting = booking.Meeting,
             Date = booking.Date,
             Time = booking.Time,
-            ContactPermission = booking.ContactPermission
+            ContactPermission = booking.ContactPermission,
+            CreatedAt = booking.CreatedAt,
+            UpdatedAt = booking.UpdatedAt
         };
     }
 }
