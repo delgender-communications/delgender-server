@@ -9,6 +9,7 @@ namespace Core.DTOs
         public string? JobTitle { get; set; }
         public string CompanyName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public string PhoneNumber {get; set;} = "";
         public string Industry { get; set; } = string.Empty;
         public string HelpWith { get; set; } = string.Empty;
         public string ProblemDescription { get; set; } = string.Empty;
@@ -17,5 +18,7 @@ namespace Core.DTOs
         public DateOnly Date { get; set; }
         public TimeOnly Time { get; set; }
         public bool ContactPermission { get; set; } = false;
+        public DateTime CreatedAt {get; set;}
+        public DateTime? UpdatedAt {get; set;}
     }
 }

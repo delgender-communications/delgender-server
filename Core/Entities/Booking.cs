@@ -5,41 +5,46 @@ namespace Core.Entities
 {
     public class Booking
     {
-        public int Id { get; set; }
+        public int Id {get; set;}
+        
         [Required, StringLength(100)]
-        public string FullName { get; set; } = string.Empty;
-
+        public string FullName {get; set;} = string.Empty;
+        
         [StringLength(100)]
-        public string? JobTitle { get; set; }
+        public string? JobTitle {get; set;}
 
         [Required, StringLength(100)]
-        public string CompanyName { get; set; } = string.Empty;
+        public string CompanyName {get; set;} = string.Empty;
 
-        [Required, EmailAddress]
-        public string Email { get; set; } = string.Empty;
+        [Required,EmailAddress]
+        public string Email {get; set;} = string.Empty;
+
+        [Required,StringLength(10)]
+        public string PhoneNumber {get; set;} = "";
 
         [Required, StringLength(100)]
-        public string Industry { get; set; } = string.Empty;
+        public string Industry {get; set;} = string.Empty;
 
         [Required, StringLength(100)]
-        public string HelpWith { get; set; } = string.Empty;
+        public string HelpWith {get; set;} = string.Empty;
 
         [Required, StringLength(500)]
-        public string ProblemDescription { get; set; } = string.Empty;
+        public string ProblemDescription {get; set;} = string.Empty;
 
         [Required, StringLength(500)]
-        public string SessionGoal { get; set; } = string.Empty;
+        public string SessionGoal {get; set;} = string.Empty;
 
         [Required]
-        public MeetingType Meeting { get; set; } = MeetingType.InPerson;
+        public MeetingType Meeting {get; set;} = MeetingType.InPerson;
 
         [Required]
-        public DateOnly Date { get; set; }
+        public DateOnly Date {get; set;}
 
         [Required]
-        public TimeOnly Time { get; set; }
-        public bool ContactPermission { get; set; } = false;
-
+        public TimeOnly Time {get; set;}
+        public bool ContactPermission {get; set;} = false;
+        public DateTime CreatedAt {get; set;}
+        public DateTime? UpdatedAt {get; set;}
         public Confirmation Confirmation { get; set; } = null!;
     }
 }
