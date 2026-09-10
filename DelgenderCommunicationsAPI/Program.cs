@@ -6,7 +6,6 @@ using Infrastructure.Data;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
-using Serilog;
 using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Application.Services;
