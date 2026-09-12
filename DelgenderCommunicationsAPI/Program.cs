@@ -1,3 +1,5 @@
+using Application.Services;
+using Application.Validators;
 using Core.Interfaces.Repositories;
 using Core.Interfaces.Services;
 using DelgenderCommunicationsAPI.Filters;
@@ -6,11 +8,10 @@ using Infrastructure.Data;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
-using Serilog;
-using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Application.Services;
 using Resend;
+using FluentValidation;
+using System.Threading.RateLimiting;
 
 try
 {
@@ -23,6 +24,7 @@ try
     // Repositories
     builder.Services.AddScoped<IBookingRepository, BookingRepository>();
     builder.Services.AddScoped<IConfirmationRepository, ConfirmationRepository>();
+    builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 
     // Services
     builder.Services.AddOptions();
@@ -89,6 +91,8 @@ try
     // Swagger / OpenAPI
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
+
+    builder.Services.AddValidatorsFromAssemblyContaining<CreateBookingDtoValidator>();
 
     builder.Services.AddControllers(options =>
     {

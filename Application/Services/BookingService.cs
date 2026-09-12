@@ -8,16 +8,18 @@ namespace Application.Services
 {
     public class BookingService : IBookingService
     {
+        private readonly ICustomerRepository _customerRepository;
         private readonly IBookingRepository _bookingRepository;
         private readonly IConfirmationRepository _confirmationRepository;
         private readonly IEmailService _emailService;
 
         public BookingService(IBookingRepository bookingRepository, IConfirmationRepository confirmationRepository,
-            IEmailService emailService)
+            IEmailService emailService, ICustomerRepository customerRepository)
         {
             _bookingRepository = bookingRepository;
             _confirmationRepository = confirmationRepository;
             _emailService = emailService;
+            _customerRepository = customerRepository;
         }
 
         public async Task<BookingDto> CreateAsync(CreateBookingDto dto)
@@ -27,7 +29,7 @@ namespace Application.Services
                 throw new ArgumentNullException(nameof(dto), "CreateBookingDto cannot be null.");
             }
 
-            var booking = new Booking
+            var customer = new Customer
             {
                 FullName = dto.FullName,
                 JobTitle = dto.JobTitle,
@@ -35,14 +37,20 @@ namespace Application.Services
                 Email = dto.Email,
                 PhoneNumber = dto.PhoneNumber,
                 Industry = dto.Industry,
+                ContactPermission = dto.ContactPermission
+            };
+
+            customer = await _customerRepository.CreateAsync(customer);
+
+            var booking = new Booking
+            {
+                CustomerId = customer.Id,
                 HelpWith = dto.HelpWith,
                 ProblemDescription = dto.ProblemDescription,
                 SessionGoal = dto.SessionGoal,
                 Meeting = dto.Meeting,
                 Date = dto.Date,
                 Time = dto.Time,
-                ContactPermission = dto.ContactPermission,
-                CreatedAt = DateTime.UtcNow
             };
 
             booking = await _bookingRepository.CreateAsync(booking);
@@ -51,8 +59,8 @@ namespace Application.Services
             {
                 BookingId = booking.Id,
                 Status = ConfirmationStatus.Pending,
-                SentAt = DateTime.UtcNow
             };
+
             confirmation = await _confirmationRepository.CreateAsync(confirmation);
 
             await SendConfirmationAsync(booking, confirmation);
@@ -86,8 +94,8 @@ namespace Application.Services
             {
                 Id = confirmation.Id,
                 BookingId = booking.Id,
-                FullName = booking.FullName,
-                CompanyName = booking.CompanyName,
+                FullName = booking.Customer.FullName,
+                CompanyName = booking.Customer.CompanyName,
                 HelpWith = booking.HelpWith,
                 Meeting = booking.Meeting,
                 BookingDate = booking.Date,
@@ -96,9 +104,8 @@ namespace Application.Services
 
             try
             {
-                await _emailService.SendBookingConfirmationAsync(confirmationDto, booking.Email);
+                await _emailService.SendBookingConfirmationAsync(confirmationDto, booking.Customer.Email);
                 confirmation.Status = ConfirmationStatus.Sent;
-                confirmation.SentAt = DateTime.UtcNow;
             }
             catch (Exception ex)
             {
@@ -113,19 +120,19 @@ namespace Application.Services
         private static BookingDto ToDto(Booking booking) => new()
         {
             Id = booking.Id,
-            FullName = booking.FullName,
-            JobTitle = booking.JobTitle,
-            CompanyName = booking.CompanyName,
-            Email = booking.Email,
-            PhoneNumber = booking.PhoneNumber,
-            Industry = booking.Industry,
+            FullName = booking.Customer.FullName,
+            JobTitle = booking.Customer.JobTitle,
+            CompanyName = booking.Customer.CompanyName,
+            Email = booking.Customer.Email,
+            PhoneNumber = booking.Customer.PhoneNumber,
+            Industry = booking.Customer.Industry,
             HelpWith = booking.HelpWith,
             ProblemDescription = booking.ProblemDescription,
             SessionGoal = booking.SessionGoal,
             Meeting = booking.Meeting,
             Date = booking.Date,
             Time = booking.Time,
-            ContactPermission = booking.ContactPermission,
+            ContactPermission = booking.Customer.ContactPermission,
             CreatedAt = booking.CreatedAt,
             UpdatedAt = booking.UpdatedAt
         };
