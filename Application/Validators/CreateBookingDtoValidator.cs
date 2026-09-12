@@ -46,6 +46,9 @@ namespace Application.Validators
                 })
                 .WithMessage("Booking must be scheduled in the future.");
 
+            RuleFor(x => x.PhoneNumber)
+                .NotEmpty().WithMessage("Phone number is required.")
+                .Length(10);
 
             RuleFor(x => x.Time)
                 .Must(time => time >= new TimeOnly(9, 0) && time <= new TimeOnly(17, 0))

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace DelgenderCommunicationsAPI.Controllers
 {
     [ApiController]
-    [Route("api/bookings")]
+    [Route("api/v1/bookings")]
     public class BookingsController : Controller
     {
         private readonly IBookingService _bookingService;
