@@ -11,15 +11,17 @@ namespace Infrastructure.Repositories
 
         public async Task<IEnumerable<Booking>> GetAllBookingsAsync(int page, int pageSize) =>
             await _db.Bookings
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            .Include(b => b.Customer)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
 
         public async Task<int> GetTotalCountAsync() =>
             await _db.Bookings.CountAsync();
 
         public async Task<Booking?> GetByIdBookingAsync(int id) =>
             await _db.Bookings
-                .FirstOrDefaultAsync(b => b.Id == id);
+            .Include(b => b.Customer)
+            .FirstOrDefaultAsync(b => b.Id == id);
     }
 }

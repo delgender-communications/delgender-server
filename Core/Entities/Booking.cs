@@ -1,44 +1,25 @@
 ﻿using Core.Enums;
-using System.ComponentModel.DataAnnotations;
 
 namespace Core.Entities
 {
     public class Booking
     {
         public int Id { get; set; }
-        [Required, StringLength(100)]
-        public string FullName { get; set; } = string.Empty;
 
-        [StringLength(100)]
-        public string? JobTitle { get; set; }
+        public int CustomerId { get; set; }
+        public Customer Customer { get; set; } = null!;
 
-        [Required, StringLength(100)]
-        public string CompanyName { get; set; } = string.Empty;
+        public string HelpWith { get; set; } = null!;
+        public string ProblemDescription { get; set; } = null!;
+        public string SessionGoal { get; set; } = null!;
 
-        [Required, EmailAddress]
-        public string Email { get; set; } = string.Empty;
+        public MeetingType Meeting { get; set; }
 
-        [Required, StringLength(100)]
-        public string Industry { get; set; } = string.Empty;
-
-        [Required, StringLength(100)]
-        public string HelpWith { get; set; } = string.Empty;
-
-        [Required, StringLength(500)]
-        public string ProblemDescription { get; set; } = string.Empty;
-
-        [Required, StringLength(500)]
-        public string SessionGoal { get; set; } = string.Empty;
-
-        [Required]
-        public MeetingType Meeting { get; set; } = MeetingType.InPerson;
-
-        [Required]
         public DateOnly Date { get; set; }
-
-        [Required]
         public TimeOnly Time { get; set; }
-        public bool ContactPermission { get; set; } = false;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         public Confirmation Confirmation { get; set; } = null!;
     }
