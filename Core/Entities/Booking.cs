@@ -24,8 +24,6 @@ namespace Core.Entities
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         public Confirmation Confirmation { get; set; } = null!;
-
-        // Staff response to the booking request
         public BookingStatus Status { get; set; } = BookingStatus.Pending;
 
         public int? RespondedByStaffId { get; set; }
