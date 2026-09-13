@@ -1,7 +1,11 @@
 ﻿using Core.DTOs;
+using Core.DTOs.Booking;
+using Core.Enums;
 using Core.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Claims;
 
 namespace DelgenderCommunicationsAPI.Controllers
 {
@@ -17,6 +21,7 @@ namespace DelgenderCommunicationsAPI.Controllers
         }
 
         [HttpPost("create")]
+        [AllowAnonymous]
         [EnableRateLimiting("booking")]
         public async Task<ActionResult<BookingDto>> Create([FromBody] CreateBookingDto dto)
         {
@@ -25,6 +30,7 @@ namespace DelgenderCommunicationsAPI.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [Authorize]
         public async Task<ActionResult<BookingDto>> GetById(int id)
         {
             var booking = await _bookingService.GetByIdAsync(id);
@@ -32,10 +38,23 @@ namespace DelgenderCommunicationsAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<PagedResultDto<BookingDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        [Authorize]
+        public async Task<ActionResult<PagedResultDto<BookingDto>>> GetAll(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] BookingStatus? status = null)
         {
-            var result = await _bookingService.GetAllAsync(page, pageSize);
+            var result = await _bookingService.GetAllAsync(page, pageSize, status);
             return Ok(result);
+        }
+
+        [HttpPatch("{id:int}/respond")]
+        [Authorize]
+        public async Task<ActionResult<BookingDto>> Respond(int id, [FromBody] RespondBookingDto dto)
+        {
+            var staffId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var booking = await _bookingService.RespondAsync(id, dto, staffId);
+            return booking is null ? NotFound() : Ok(booking);
         }
     }
 }

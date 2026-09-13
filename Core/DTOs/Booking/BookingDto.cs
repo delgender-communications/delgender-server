@@ -1,45 +1,30 @@
 ﻿using Core.Enums;
-using System.ComponentModel.DataAnnotations;
 
-namespace Core.DTOs
+namespace Core.DTOs.Booking
 {
-    public class CreateBookingDto
+    public class BookingDto
     {
-        [Required, StringLength(100)]
+        public int Id { get; set; }
         public string FullName { get; set; } = string.Empty;
-
-        [StringLength(100)]
         public string? JobTitle { get; set; }
-
-        [Required, StringLength(100)]
         public string CompanyName { get; set; } = string.Empty;
-
-        [Required, EmailAddress]
         public string Email { get; set; } = string.Empty;
-
-        [Required,StringLength(10)]
-        public string PhoneNumber {get; set;} = "";
-
-        [Required, StringLength(100)]
+        public string PhoneNumber { get; set; } = "";
         public string Industry { get; set; } = string.Empty;
-
-        [Required, StringLength(100)]
         public string HelpWith { get; set; } = string.Empty;
-
-        [Required, StringLength(500)]
         public string ProblemDescription { get; set; } = string.Empty;
-
-        [Required, StringLength(500)]
         public string SessionGoal { get; set; } = string.Empty;
-
-        [Required]
         public MeetingType Meeting { get; set; } = MeetingType.InPerson;
-
-        [Required]
         public DateOnly Date { get; set; }
-
-        [Required]
         public TimeOnly Time { get; set; }
         public bool ContactPermission { get; set; } = false;
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+
+        public BookingStatus Status { get; set; } = BookingStatus.Pending;
+        public string? RespondedByStaffName { get; set; }
+        public DateTime? RespondedAt { get; set; }
+        public string? ResponseMessage { get; set; }
+        public string? DeclineReason { get; set; }
     }
 }

@@ -6,6 +6,7 @@ namespace Core.DTOs
     {
         public int Id { get; set; }
         public int BookingId { get; set; }
+        public string BookingReference { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string CompanyName { get; set; } = string.Empty;
         public string HelpWith { get; set; } = string.Empty;

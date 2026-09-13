@@ -1,16 +1,20 @@
 using Application.Services;
 using Application.Validators;
+using Core.Configuration;
 using Core.Interfaces.Repositories;
 using Core.Interfaces.Services;
 using DelgenderCommunicationsAPI.Filters;
 using DelgenderCommunicationsAPI.Middleware;
+using FluentValidation;
 using Infrastructure.Data;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Resend;
-using FluentValidation;
+using System.Text;
 using System.Threading.RateLimiting;
 
 try
@@ -25,10 +29,42 @@ try
     builder.Services.AddScoped<IBookingRepository, BookingRepository>();
     builder.Services.AddScoped<IConfirmationRepository, ConfirmationRepository>();
     builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+    builder.Services.AddScoped<IStaffRepository, StaffRepository>();
+    builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+    builder.Services.AddScoped<ITrustedDeviceRepository, TrustedDeviceRepository>();
+    builder.Services.AddScoped<ILoginOtpRepository, LoginOtpRepository>();
+    builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+    builder.Services.AddScoped<IPageViewRepository, PageViewRepository>();
 
     // Services
     builder.Services.AddOptions();
     builder.Services.AddHttpClient();
+
+    builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+    var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()
+        ?? throw new InvalidOperationException("Jwt configuration section is missing.");
+
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30)
+        };
+    });
+
+    builder.Services.AddAuthorization();
 
     builder.Services.AddSingleton<IResend>(sp =>
     {
@@ -41,6 +77,21 @@ try
 
     builder.Services.AddScoped<IEmailService, EmailService>();
     builder.Services.AddScoped<IBookingService, BookingService>();
+    builder.Services.AddScoped<IAuthService, AuthService>();
+    builder.Services.AddScoped<IStaffService, StaffService>();
+    builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+    builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+
+    builder.Services.AddScoped<IInvoicePdfService, InvoicePdfService>();
+    QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
+    // Fire-and-forget queue for cheap reconciliation work (e.g. overdue invoices)
+    // kicked off on login instead of a scheduler - see AuthService.EnqueueOverdueInvoiceSweep.
+    builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+    builder.Services.AddHostedService<QueuedHostedService>();
+
+    builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
+    builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
     // Rate Limiting
     builder.Services.AddRateLimiter(options =>
@@ -120,14 +171,29 @@ try
                 "Cors:AllowedOrigin is not configured.");
         }
 
+        // Supports a single origin or a comma-separated list (public site + staff portal)
+        var origins = allowedOrigin
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
         options.AddPolicy("AllowFrontend", policy =>
-            policy.WithOrigins(allowedOrigin)
+            policy.WithOrigins(origins)
                   .AllowAnyMethod()
                   .AllowAnyHeader());
     });
 
     // Build app
     var app = builder.Build();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await Infrastructure.Data.AdminSeeder.SeedAsync(db, app.Configuration);
+
+        // covers the gap while the app was asleep (Railway etc.) - the login-triggered
+        // sweep in AuthService then keeps it current from here on
+        var invoiceService = scope.ServiceProvider.GetRequiredService<IInvoiceService>();
+        await invoiceService.RefreshOverdueInvoicesAsync();
+    }
 
     // Middleware pipeline
     app.UseMiddleware<CorrelationIdMiddleware>();

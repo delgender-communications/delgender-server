@@ -6,6 +6,8 @@ namespace Core.Entities
     {
         public int Id { get; set; }
 
+        public string BookingReference { get; set; } = null!;
+
         public int CustomerId { get; set; }
         public Customer Customer { get; set; } = null!;
 
@@ -22,5 +24,17 @@ namespace Core.Entities
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         public Confirmation Confirmation { get; set; } = null!;
+
+        // Staff response to the booking request
+        public BookingStatus Status { get; set; } = BookingStatus.Pending;
+
+        public int? RespondedByStaffId { get; set; }
+        public Staff? RespondedByStaff { get; set; }
+
+        public DateTime? RespondedAt { get; set; }
+        public string? ResponseMessage { get; set; }
+        public string? DeclineReason { get; set; }
+
+        public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
     }
 }
