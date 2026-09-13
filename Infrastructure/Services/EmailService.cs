@@ -1,4 +1,5 @@
 ﻿using Core.DTOs;
+using Core.Entities;
 using Core.Enums;
 using Core.Interfaces.Services;
 using Resend;
@@ -12,6 +13,187 @@ namespace Infrastructure.Services
         public EmailService(IResend resend)
         {
             _resend = resend;
+        }
+
+        public async Task SendOtpAsync(string recipientEmail, string firstName, string code, int expiryMinutes)
+        {
+            var message = new EmailMessage
+            {
+                From = "Delgender Communications <staff@delgendercommunications.site>",
+                To = recipientEmail,
+                Subject = $"Your sign-in code is {code}",
+                HtmlBody = BuildSimpleHtml(
+                    heading: "Your sign-in code",
+                    intro: $"Hi {firstName}, use this code to finish signing in to the staff portal.",
+                    highlight: code,
+                    highlightLabel: $"Expires in {expiryMinutes} minutes",
+                    footerNote: "If you didn't try to sign in, you can safely ignore this email."),
+                TextBody = $"Hi {firstName},\n\nYour sign-in code is {code}. It expires in {expiryMinutes} minutes.\n\nIf you didn't try to sign in, you can safely ignore this email.\n\n© {DateTime.UtcNow.Year} Delgender Communications"
+            };
+
+            await _resend.EmailSendAsync(message);
+        }
+
+        public async Task SendBookingResponseAsync(Booking booking, string subject, string message)
+        {
+            var statusLabel = booking.Status == BookingStatus.Confirmed ? "Confirmed" : "Declined";
+
+            var email = new EmailMessage
+            {
+                From = "Delgender Communications <bookings@delgendercommunications.site>",
+                To = booking.Customer.Email,
+                Subject = subject,
+                HtmlBody = BuildSimpleHtml(
+                    heading: subject,
+                    intro: $"Hi {booking.Customer.FullName},",
+                    highlight: null,
+                    highlightLabel: null,
+                    bodyHtml: FormatMessageAsHtml(message),
+                    footerNote: $"Booking reference #{booking.Id} · {statusLabel} · {booking.Date:dddd, d MMMM yyyy} at {booking.Time:h:mm tt}"),
+                TextBody = $"Hi {booking.Customer.FullName},\n\n{message}\n\nBooking reference #{booking.Id} · {statusLabel} · {booking.Date:dddd, d MMMM yyyy} at {booking.Time:h:mm tt}\n\n© {DateTime.UtcNow.Year} Delgender Communications"
+            };
+
+            await _resend.EmailSendAsync(email);
+        }
+
+        public async Task SendStaffWelcomeAsync(Staff staff, string temporaryPassword, string loginUrl)
+        {
+            var message = new EmailMessage
+            {
+                From = "Delgender Communications <staff@delgendercommunications.site>",
+                To = staff.Email,
+                Subject = "Your Delgender Communications staff account",
+                HtmlBody = BuildSimpleHtml(
+                    heading: "Welcome to the team",
+                    intro: $"Hi {staff.Name}, an account has been created for you on the Delgender Communications staff portal.",
+                    highlight: temporaryPassword,
+                    highlightLabel: "Temporary password",
+                    bodyHtml: $"""
+                        <p style="margin:0 0 6px;font-size:14px;color:#4b5563;">Staff ID: <strong>{staff.StaffId}</strong></p>
+                        <p style="margin:0 0 20px;font-size:14px;color:#4b5563;">Email: <strong>{staff.Email}</strong></p>
+                        <p style="margin:0 0 20px;font-size:15px;color:#4b5563;">
+                            Sign in and you'll be asked to set a new password and, if enabled, verify a one-time
+                            code sent to this inbox.
+                        </p>
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
+                            <tr><td align="center" style="border-radius:8px;background-color:#12d3de;">
+                                <a href="{loginUrl}" style="display:inline-block;padding:12px 26px;font-size:14px;font-weight:bold;color:#00191b;text-decoration:none;">
+                                    Go to staff portal
+                                </a>
+                            </td></tr>
+                        </table>
+                        """,
+                    footerNote: "For security, please change your password as soon as you sign in."),
+                TextBody = $"Hi {staff.Name},\n\nAn account has been created for you on the Delgender Communications staff portal.\n\nStaff ID: {staff.StaffId}\nEmail: {staff.Email}\nTemporary password: {temporaryPassword}\n\nSign in at {loginUrl} and set a new password.\n\n© {DateTime.UtcNow.Year} Delgender Communications"
+            };
+
+            await _resend.EmailSendAsync(message);
+        }
+
+        public async Task SendInvoiceAsync(Invoice invoice, string? message)
+        {
+            var rows = string.Join("", invoice.Items.Select(i => $"""
+                <tr>
+                    <td style="padding:8px 0;font-size:14px;color:#374151;border-top:1px solid #e5e7eb;">{i.Description}</td>
+                    <td align="right" style="padding:8px 0;font-size:14px;color:#374151;border-top:1px solid #e5e7eb;">{i.Quantity}</td>
+                    <td align="right" style="padding:8px 0;font-size:14px;color:#374151;border-top:1px solid #e5e7eb;">R{i.UnitPrice:N2}</td>
+                    <td align="right" style="padding:8px 0;font-size:14px;font-weight:bold;color:#111827;border-top:1px solid #e5e7eb;">R{i.TotalAmount:N2}</td>
+                </tr>
+                """));
+
+            var bodyHtml = $"""
+                {(string.IsNullOrWhiteSpace(message) ? "" : $"<p style=\"margin:0 0 20px;font-size:15px;color:#4b5563;\">{FormatMessageAsHtml(message)}</p>")}
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:16px;">
+                    <tr>
+                        <td style="padding:6px 0;font-size:14px;color:#6b7280;">Invoice</td>
+                        <td align="right" style="padding:6px 0;font-size:14px;font-weight:bold;color:#111827;">{invoice.InvoiceNumber}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:6px 0;font-size:14px;color:#6b7280;">Due date</td>
+                        <td align="right" style="padding:6px 0;font-size:14px;font-weight:bold;color:#111827;">{invoice.DueDate:d MMMM yyyy}</td>
+                    </tr>
+                </table>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                    <tr>
+                        <td style="padding-bottom:8px;font-size:12px;font-weight:bold;text-transform:uppercase;color:#6b7280;">Description</td>
+                        <td align="right" style="padding-bottom:8px;font-size:12px;font-weight:bold;text-transform:uppercase;color:#6b7280;">Qty</td>
+                        <td align="right" style="padding-bottom:8px;font-size:12px;font-weight:bold;text-transform:uppercase;color:#6b7280;">Rate</td>
+                        <td align="right" style="padding-bottom:8px;font-size:12px;font-weight:bold;text-transform:uppercase;color:#6b7280;">Amount</td>
+                    </tr>
+                    {rows}
+                </table>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:16px;">
+                    <tr><td align="right" style="padding:4px 0;font-size:20px;font-weight:bold;color:#111827;">Total due: R{invoice.TotalAmount:N2}</td></tr>
+                </table>
+                """;
+
+            var email = new EmailMessage
+            {
+                From = "Delgender Communications <billing@delgendercommunications.site>",
+                To = invoice.Customer.Email,
+                Subject = $"Invoice {invoice.InvoiceNumber} from Delgender Communications",
+                HtmlBody = BuildSimpleHtml(
+                    heading: $"Invoice {invoice.InvoiceNumber}",
+                    intro: $"Hi {invoice.Customer.FullName},",
+                    highlight: null,
+                    highlightLabel: null,
+                    bodyHtml: bodyHtml,
+                    footerNote: "Please do not reply to this email. This mailbox is not monitored."),
+                TextBody = $"Hi {invoice.Customer.FullName},\n\nInvoice {invoice.InvoiceNumber} — total due R{invoice.TotalAmount:N2}, due {invoice.DueDate:d MMMM yyyy}.\n\n© {DateTime.UtcNow.Year} Delgender Communications"
+            };
+
+            await _resend.EmailSendAsync(email);
+        }
+
+        private static string FormatMessageAsHtml(string message) =>
+            string.Join("", message
+                .Split('\n')
+                .Select(line => $"<p style=\"margin:0 0 14px;font-size:15px;line-height:24px;color:#374151;\">{System.Net.WebUtility.HtmlEncode(line)}</p>"));
+
+        private static string BuildSimpleHtml(
+            string heading,
+            string intro,
+            string? highlight,
+            string? highlightLabel,
+            string? footerNote,
+            string? bodyHtml = null)
+        {
+            var highlightBlock = highlight is null ? "" : $"""
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px;">
+                    <tr><td align="center" style="padding:22px 24px;background-color:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;">
+                        <p style="margin:0 0 6px;font-size:32px;font-weight:bold;letter-spacing:6px;color:#111827;">{highlight}</p>
+                        <p style="margin:0;font-size:12px;color:#6b7280;">{highlightLabel}</p>
+                    </td></tr>
+                </table>
+                """;
+
+            return $"""
+                <!DOCTYPE html>
+                <html lang="en">
+                <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{heading}</title></head>
+                <body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial, Helvetica, sans-serif;color:#1f2937;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f4f6f8;padding:40px 16px;">
+                        <tr><td align="center">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;">
+                                <tr><td align="center" style="padding:32px 30px 24px;">
+                                    <img src="https://delgendercommunications.site/favicon.png" alt="Delgender Communications" width="160" style="display:block;max-width:160px;height:auto;margin-bottom:24px;">
+                                    <h1 style="margin:0;font-size:24px;line-height:32px;color:#111827;">{heading}</h1>
+                                </td></tr>
+                                <tr><td style="padding:0 30px 32px;">
+                                    <p style="margin:0 0 20px;font-size:16px;line-height:26px;">{intro}</p>
+                                    {highlightBlock}
+                                    {bodyHtml ?? ""}
+                                </td></tr>
+                                <tr><td style="padding:24px 30px;background-color:#f8fafc;border-top:1px solid #e5e7eb;text-align:center;">
+                                    <p style="margin:0 0 8px;font-size:12px;line-height:19px;color:#6b7280;">{footerNote}</p>
+                                    <p style="margin:0;font-size:11px;color:#9ca3af;">© {DateTime.UtcNow.Year} Delgender Communications</p>
+                                </td></tr>
+                            </table>
+                        </td></tr>
+                    </table>
+                </body>
+                </html>
+                """;
         }
 
         public async Task SendBookingConfirmationAsync(
@@ -372,5 +554,6 @@ namespace Infrastructure.Services
                 _ => meeting.ToString()
             };
         }
+
     }
 }

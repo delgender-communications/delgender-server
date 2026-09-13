@@ -1,4 +1,5 @@
 ﻿using Core.DTOs;
+using Core.DTOs.Booking;
 using Core.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;

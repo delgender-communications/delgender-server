@@ -1,4 +1,5 @@
 ﻿using Core.DTOs;
+using Core.DTOs.Booking;
 using Core.Entities;
 using Core.Enums;
 using Core.Interfaces.Repositories;
@@ -11,15 +12,17 @@ namespace Application.Services
         private readonly ICustomerRepository _customerRepository;
         private readonly IBookingRepository _bookingRepository;
         private readonly IConfirmationRepository _confirmationRepository;
+        private readonly IStaffRepository _staffRepository;
         private readonly IEmailService _emailService;
 
         public BookingService(IBookingRepository bookingRepository, IConfirmationRepository confirmationRepository,
-            IEmailService emailService, ICustomerRepository customerRepository)
+            IEmailService emailService, ICustomerRepository customerRepository, IStaffRepository staffRepository)
         {
             _bookingRepository = bookingRepository;
             _confirmationRepository = confirmationRepository;
             _emailService = emailService;
             _customerRepository = customerRepository;
+            _staffRepository = staffRepository;
         }
 
         public async Task<BookingDto> CreateAsync(CreateBookingDto dto)
@@ -51,6 +54,7 @@ namespace Application.Services
                 Meeting = dto.Meeting,
                 Date = dto.Date,
                 Time = dto.Time,
+                Status = BookingStatus.Pending
             };
 
             booking = await _bookingRepository.CreateAsync(booking);
@@ -65,6 +69,7 @@ namespace Application.Services
 
             await SendConfirmationAsync(booking, confirmation);
 
+            booking.Customer = customer;
             return ToDto(booking);
         }
 
@@ -74,10 +79,10 @@ namespace Application.Services
             return booking is null ? null : ToDto(booking);
         }
 
-        public async Task<PagedResultDto<BookingDto>> GetAllAsync(int page, int pageSize)
+        public async Task<PagedResultDto<BookingDto>> GetAllAsync(int page, int pageSize, BookingStatus? status)
         {
-            var bookings = await _bookingRepository.GetAllBookingsAsync(page, pageSize);
-            var totalCount = await _bookingRepository.GetTotalCountAsync();
+            var bookings = await _bookingRepository.GetAllBookingsAsync(page, pageSize, status);
+            var totalCount = await _bookingRepository.GetTotalCountAsync(status);
 
             return new PagedResultDto<BookingDto>
             {
@@ -86,6 +91,43 @@ namespace Application.Services
                 Page = page,
                 PageSize = pageSize
             };
+        }
+
+        public async Task<BookingDto?> RespondAsync(int id, RespondBookingDto dto, int staffId)
+        {
+            if (dto.Status is not (BookingStatus.Confirmed or BookingStatus.Declined))
+            {
+                throw new ArgumentException("A response must either confirm or decline the booking.");
+            }
+
+            var booking = await _bookingRepository.GetByIdBookingAsync(id)
+                ?? throw new KeyNotFoundException("Booking not found.");
+
+            if (booking.Status != BookingStatus.Pending)
+            {
+                throw new InvalidOperationException("This booking has already been responded to.");
+            }
+
+            var staff = await _staffRepository.GetByIdAsync(staffId)
+                ?? throw new KeyNotFoundException("Staff member not found.");
+
+            booking.Status = dto.Status;
+            booking.RespondedByStaffId = staffId;
+            booking.RespondedAt = DateTime.UtcNow;
+            booking.ResponseMessage = dto.Message;
+            booking.DeclineReason = dto.Status == BookingStatus.Declined ? dto.DeclineReason : null;
+            booking.UpdatedAt = DateTime.UtcNow;
+
+            await _bookingRepository.UpdateAsync(booking);
+
+            var subject = dto.Status == BookingStatus.Confirmed
+                ? "Your consultation booking has been confirmed"
+                : "An update on your consultation booking request";
+
+            await _emailService.SendBookingResponseAsync(booking, subject, dto.Message);
+
+            booking.RespondedByStaff = staff;
+            return ToDto(booking);
         }
 
         private async Task SendConfirmationAsync(Booking booking, Confirmation confirmation)
@@ -134,7 +176,15 @@ namespace Application.Services
             Time = booking.Time,
             ContactPermission = booking.Customer.ContactPermission,
             CreatedAt = booking.CreatedAt,
-            UpdatedAt = booking.UpdatedAt
+            UpdatedAt = booking.UpdatedAt,
+            Status = booking.Status,
+            RespondedByStaffName = booking.RespondedByStaff is null
+                ? null
+                : $"{booking.RespondedByStaff.Name} {booking.RespondedByStaff.Surname}",
+            RespondedAt = booking.RespondedAt,
+            ResponseMessage = booking.ResponseMessage,
+            DeclineReason = booking.DeclineReason
         };
+
     }
 }

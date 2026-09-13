@@ -1,4 +1,4 @@
-﻿using Core.DTOs;
+﻿using Core.DTOs.Booking;
 using FluentValidation;
 
 namespace Application.Validators

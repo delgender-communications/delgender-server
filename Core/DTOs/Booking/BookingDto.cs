@@ -1,6 +1,6 @@
 ﻿using Core.Enums;
 
-namespace Core.DTOs
+namespace Core.DTOs.Booking
 {
     public class BookingDto
     {
@@ -9,7 +9,7 @@ namespace Core.DTOs
         public string? JobTitle { get; set; }
         public string CompanyName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
-        public string PhoneNumber {get; set;} = "";
+        public string PhoneNumber { get; set; } = "";
         public string Industry { get; set; } = string.Empty;
         public string HelpWith { get; set; } = string.Empty;
         public string ProblemDescription { get; set; } = string.Empty;
@@ -18,7 +18,13 @@ namespace Core.DTOs
         public DateOnly Date { get; set; }
         public TimeOnly Time { get; set; }
         public bool ContactPermission { get; set; } = false;
-        public DateTime CreatedAt {get; set;}
-        public DateTime? UpdatedAt {get; set;}
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+
+        public BookingStatus Status { get; set; } = BookingStatus.Pending;
+        public string? RespondedByStaffName { get; set; }
+        public DateTime? RespondedAt { get; set; }
+        public string? ResponseMessage { get; set; }
+        public string? DeclineReason { get; set; }
     }
 }

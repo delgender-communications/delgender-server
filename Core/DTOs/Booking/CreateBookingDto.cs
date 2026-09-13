@@ -1,7 +1,7 @@
 ﻿using Core.Enums;
 using System.ComponentModel.DataAnnotations;
 
-namespace Core.DTOs
+namespace Core.DTOs.Booking
 {
     public class CreateBookingDto
     {
