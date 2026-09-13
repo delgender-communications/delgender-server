@@ -7,7 +7,7 @@ using Core.Interfaces.Services;
 
 namespace Application.Services
 {
-    public class InvoiceService
+    public class InvoiceService : IInvoiceService
     {
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly ICustomerRepository _customerRepository;
@@ -55,7 +55,10 @@ namespace Application.Services
         public async Task<InvoiceDto?> UpdateAsync(int id, UpdateInvoiceDto dto)
         {
             var invoice = await _invoiceRepository.GetByIdWithDetailsAsync(id);
-            if (invoice is null) return null;
+            if (invoice is null)
+            {
+                return null;
+            }
 
             if (invoice.Status != InvoiceStatus.Draft)
             {
@@ -96,7 +99,10 @@ namespace Application.Services
         public async Task<InvoiceDto?> UpdateStatusAsync(int id, UpdateInvoiceStatusDto dto)
         {
             var invoice = await _invoiceRepository.GetByIdWithDetailsAsync(id);
-            if (invoice is null) return null;
+            if (invoice is null)
+            {
+                return null;
+            }
 
             invoice.Status = dto.Status;
             invoice.UpdatedAt = DateTime.UtcNow;
@@ -118,7 +124,10 @@ namespace Application.Services
         public async Task<InvoiceDto?> SendAsync(int id, SendInvoiceDto dto)
         {
             var invoice = await _invoiceRepository.GetByIdWithDetailsAsync(id);
-            if (invoice is null) return null;
+            if (invoice is null)
+            {
+                return null;
+            }
 
             var pdfBytes = _pdfService.Generate(invoice);
             await _emailService.SendInvoiceAsync(invoice, dto.Message, pdfBytes);
@@ -191,8 +200,6 @@ namespace Application.Services
 
         private static InvoiceDto ToDto(Invoice invoice)
         {
-            // Defensive display-only fallback: if the background sweep hasn't caught
-            // this one yet, still show it as Overdue rather than stale "Sent".
             var displayStatus = invoice.Status == InvoiceStatus.Sent && invoice.DueDate.Date < DateTime.UtcNow.Date
                 ? InvoiceStatus.Overdue
                 : invoice.Status;

@@ -65,6 +65,10 @@ namespace Infrastructure.Data
                 .IsUnique();
 
             modelBuilder.Entity<Booking>()
+                .HasIndex(b => b.BookingReference)
+                .IsUnique();
+
+            modelBuilder.Entity<Booking>()
                 .HasOne(b => b.RespondedByStaff)
                 .WithMany()
                 .HasForeignKey(b => b.RespondedByStaffId)

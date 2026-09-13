@@ -17,8 +17,6 @@ namespace DelgenderCommunicationsAPI.Controllers
             _customerRepository = customerRepository;
         }
 
-        // Small, staff-only lookup used to attach an invoice to an existing customer
-        // (one is created automatically whenever someone submits a booking).
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CustomerDto>>> GetAll([FromQuery] string? search = null)
         {

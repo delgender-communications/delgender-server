@@ -1,4 +1,6 @@
-﻿namespace Core.DTOs.Auth
+﻿using Core.Enums;
+
+namespace Core.DTOs.Auth
 {
     public class StaffDto
     {

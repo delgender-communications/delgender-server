@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 
 namespace Application.Services
 {
-    public class StaffService
+    public class StaffService : IStaffService
     {
         private const string ProfilePictureFolder = "delgender-communications/staff";
 

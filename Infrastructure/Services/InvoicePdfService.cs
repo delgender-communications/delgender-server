@@ -8,7 +8,7 @@ using QuestPDF.Helpers;
 namespace Infrastructure.Services
 {
     /// <summary>
-    /// renders an Invoice as a branded PDF (logo, brand accent colour, line items,
+    /// Renders an Invoice as a branded PDF (logo, brand accent colour, line items,
     /// totals) using QuestPDF
     /// </summary>
     public class InvoicePdfService : IInvoicePdfService

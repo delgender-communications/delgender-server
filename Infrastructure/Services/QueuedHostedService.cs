@@ -26,8 +26,6 @@ namespace Infrastructure.Services
 
                 try
                 {
-                    // each queued job gets its own DI scope, since the request scope
-                    // that enqueued it is long gone by the time this runs
                     using var scope = _serviceProvider.CreateScope();
                     await workItem(scope.ServiceProvider, stoppingToken);
                 }
