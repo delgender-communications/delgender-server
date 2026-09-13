@@ -3,6 +3,7 @@ using Core.DTOs.Auth;
 using Core.Entities;
 using Core.Interfaces.Repositories;
 using Core.Interfaces.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -19,6 +20,7 @@ namespace Application.Services
         private readonly ITrustedDeviceRepository _trustedDeviceRepository;
         private readonly ILoginOtpRepository _loginOtpRepository;
         private readonly IEmailService _emailService;
+        private readonly IBackgroundTaskQueue _backgroundTaskQueue;
         private readonly JwtSettings _jwtSettings;
 
         public AuthService(
@@ -27,6 +29,7 @@ namespace Application.Services
             ITrustedDeviceRepository trustedDeviceRepository,
             ILoginOtpRepository loginOtpRepository,
             IEmailService emailService,
+            IBackgroundTaskQueue backgroundTaskQueue,
             IOptions<JwtSettings> jwtSettings)
         {
             _staffRepository = staffRepository;
@@ -34,6 +37,7 @@ namespace Application.Services
             _trustedDeviceRepository = trustedDeviceRepository;
             _loginOtpRepository = loginOtpRepository;
             _emailService = emailService;
+            _backgroundTaskQueue = backgroundTaskQueue;
             _jwtSettings = jwtSettings.Value;
         }
 
@@ -66,6 +70,8 @@ namespace Application.Services
                     await _staffRepository.UpdateAsync(staff);
 
                     var directTokens = await GenerateTokensAsync(staff, dto.RememberMe, ipAddress);
+
+                    EnqueueOverdueInvoiceSweep();
 
                     return new LoginResultDto
                     {
@@ -142,6 +148,8 @@ namespace Application.Services
 
             staff.LastLoginAt = DateTime.UtcNow;
             await _staffRepository.UpdateAsync(staff);
+
+            EnqueueOverdueInvoiceSweep();
 
             return new VerifyOtpResultDto
             {
@@ -224,6 +232,18 @@ namespace Application.Services
 
             device.RevokedAt = DateTime.UtcNow;
             await _trustedDeviceRepository.UpdateAsync(device);
+        }
+
+        private void EnqueueOverdueInvoiceSweep()
+        {
+            // Fire-and-forget: runs after this request finishes responding, in its own
+            // DI scope. Doesn't block login, and doesn't need a scheduler running while
+            // the app is asleep - it just piggybacks on the next person who logs in.
+            _backgroundTaskQueue.Enqueue(async (services, cancellationToken) =>
+            {
+                var invoiceService = services.GetRequiredService<IInvoiceService>();
+                await invoiceService.RefreshOverdueInvoicesAsync();
+            });
         }
 
         private async Task<AuthTokensDto> GenerateTokensAsync(Staff staff, bool rememberMe, string? ipAddress)

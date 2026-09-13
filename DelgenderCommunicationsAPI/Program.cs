@@ -82,6 +82,14 @@ try
     builder.Services.AddScoped<IInvoiceService, InvoiceService>();
     builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
+    builder.Services.AddScoped<IInvoicePdfService, InvoicePdfService>();
+    QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
+    // Fire-and-forget queue for cheap reconciliation work (e.g. overdue invoices)
+    // kicked off on login instead of a scheduler - see AuthService.EnqueueOverdueInvoiceSweep.
+    builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+    builder.Services.AddHostedService<QueuedHostedService>();
+
     builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
     builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
@@ -179,7 +187,12 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await AdminSeeder.SeedAsync(db, app.Configuration);
+        await Infrastructure.Data.AdminSeeder.SeedAsync(db, app.Configuration);
+
+        // covers the gap while the app was asleep (Railway etc.) - the login-triggered
+        // sweep in AuthService then keeps it current from here on
+        var invoiceService = scope.ServiceProvider.GetRequiredService<IInvoiceService>();
+        await invoiceService.RefreshOverdueInvoicesAsync();
     }
 
     // Middleware pipeline

@@ -49,8 +49,8 @@ namespace Infrastructure.Services
                     highlight: null,
                     highlightLabel: null,
                     bodyHtml: FormatMessageAsHtml(message),
-                    footerNote: $"Booking reference #{booking.Id} · {statusLabel} · {booking.Date:dddd, d MMMM yyyy} at {booking.Time:h:mm tt}"),
-                TextBody = $"Hi {booking.Customer.FullName},\n\n{message}\n\nBooking reference #{booking.Id} · {statusLabel} · {booking.Date:dddd, d MMMM yyyy} at {booking.Time:h:mm tt}\n\n© {DateTime.UtcNow.Year} Delgender Communications"
+                    footerNote: $"Booking reference {booking.BookingReference} · {statusLabel} · {booking.Date:dddd, d MMMM yyyy} at {booking.Time:h:mm tt}"),
+                TextBody = $"Hi {booking.Customer.FullName},\n\n{message}\n\nBooking reference {booking.BookingReference} · {statusLabel} · {booking.Date:dddd, d MMMM yyyy} at {booking.Time:h:mm tt}\n\n© {DateTime.UtcNow.Year} Delgender Communications"
             };
 
             await _resend.EmailSendAsync(email);
@@ -90,41 +90,29 @@ namespace Infrastructure.Services
             await _resend.EmailSendAsync(message);
         }
 
-        public async Task SendInvoiceAsync(Invoice invoice, string? message)
+        public async Task SendInvoiceAsync(Invoice invoice, string? message, byte[] pdfBytes)
         {
-            var rows = string.Join("", invoice.Items.Select(i => $"""
-                <tr>
-                    <td style="padding:8px 0;font-size:14px;color:#374151;border-top:1px solid #e5e7eb;">{i.Description}</td>
-                    <td align="right" style="padding:8px 0;font-size:14px;color:#374151;border-top:1px solid #e5e7eb;">{i.Quantity}</td>
-                    <td align="right" style="padding:8px 0;font-size:14px;color:#374151;border-top:1px solid #e5e7eb;">R{i.UnitPrice:N2}</td>
-                    <td align="right" style="padding:8px 0;font-size:14px;font-weight:bold;color:#111827;border-top:1px solid #e5e7eb;">R{i.TotalAmount:N2}</td>
-                </tr>
-                """));
-
+            // Full line-item breakdown lives in the attached PDF now - the email body
+            // is just the essentials someone needs at a glance before opening it.
             var bodyHtml = $"""
-                {(string.IsNullOrWhiteSpace(message) ? "" : $"<p style=\"margin:0 0 20px;font-size:15px;color:#4b5563;\">{FormatMessageAsHtml(message)}</p>")}
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:16px;">
+                {(string.IsNullOrWhiteSpace(message) ? "" : $"<p style=\"margin:0 0 20px;font-size:15px;line-height:24px;color:#374151;\">{FormatMessageAsHtml(message)}</p>")}
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;">
                     <tr>
-                        <td style="padding:6px 0;font-size:14px;color:#6b7280;">Invoice</td>
-                        <td align="right" style="padding:6px 0;font-size:14px;font-weight:bold;color:#111827;">{invoice.InvoiceNumber}</td>
+                        <td style="padding:16px 18px;font-size:14px;color:#6b7280;">Invoice number</td>
+                        <td align="right" style="padding:16px 18px;font-size:14px;font-weight:bold;color:#111827;">{invoice.InvoiceNumber}</td>
                     </tr>
                     <tr>
-                        <td style="padding:6px 0;font-size:14px;color:#6b7280;">Due date</td>
-                        <td align="right" style="padding:6px 0;font-size:14px;font-weight:bold;color:#111827;">{invoice.DueDate:d MMMM yyyy}</td>
+                        <td style="padding:0 18px 16px;font-size:14px;color:#6b7280;border-top:1px solid #e5e7eb;">Due date</td>
+                        <td align="right" style="padding:16px 18px 16px;font-size:14px;font-weight:bold;color:#111827;border-top:1px solid #e5e7eb;">{invoice.DueDate:d MMMM yyyy}</td>
                     </tr>
-                </table>
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                     <tr>
-                        <td style="padding-bottom:8px;font-size:12px;font-weight:bold;text-transform:uppercase;color:#6b7280;">Description</td>
-                        <td align="right" style="padding-bottom:8px;font-size:12px;font-weight:bold;text-transform:uppercase;color:#6b7280;">Qty</td>
-                        <td align="right" style="padding-bottom:8px;font-size:12px;font-weight:bold;text-transform:uppercase;color:#6b7280;">Rate</td>
-                        <td align="right" style="padding-bottom:8px;font-size:12px;font-weight:bold;text-transform:uppercase;color:#6b7280;">Amount</td>
+                        <td style="padding:0 18px 16px;font-size:15px;color:#111827;border-top:1px solid #e5e7eb;">Total due</td>
+                        <td align="right" style="padding:16px 18px 16px;font-size:20px;font-weight:bold;color:#12d3de;border-top:1px solid #e5e7eb;">R{invoice.TotalAmount:N2}</td>
                     </tr>
-                    {rows}
                 </table>
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:16px;">
-                    <tr><td align="right" style="padding:4px 0;font-size:20px;font-weight:bold;color:#111827;">Total due: R{invoice.TotalAmount:N2}</td></tr>
-                </table>
+                <p style="margin:18px 0 0;font-size:13.5px;color:#6b7280;">
+                    The full breakdown is in the attached PDF (<strong>{invoice.InvoiceNumber}.pdf</strong>).
+                </p>
                 """;
 
             var email = new EmailMessage
@@ -139,7 +127,15 @@ namespace Infrastructure.Services
                     highlightLabel: null,
                     bodyHtml: bodyHtml,
                     footerNote: "Please do not reply to this email. This mailbox is not monitored."),
-                TextBody = $"Hi {invoice.Customer.FullName},\n\nInvoice {invoice.InvoiceNumber} — total due R{invoice.TotalAmount:N2}, due {invoice.DueDate:d MMMM yyyy}.\n\n© {DateTime.UtcNow.Year} Delgender Communications"
+                TextBody = $"Hi {invoice.Customer.FullName},\n\n{(string.IsNullOrWhiteSpace(message) ? "" : message + "\n\n")}Invoice {invoice.InvoiceNumber} — total due R{invoice.TotalAmount:N2}, due {invoice.DueDate:d MMMM yyyy}. Full breakdown attached as a PDF.\n\n© {DateTime.UtcNow.Year} Delgender Communications",
+                Attachments = new List<EmailAttachment>
+                {
+                    new EmailAttachment
+                    {
+                        Filename = $"{invoice.InvoiceNumber}.pdf",
+                        Content = pdfBytes
+                    }
+                }
             };
 
             await _resend.EmailSendAsync(email);
@@ -313,7 +309,9 @@ namespace Infrastructure.Services
                                             ">
                                                 Thank you for choosing Delgender Communications.
                                                 Your consultation request has been successfully
-                                                received and is currently being reviewed.
+                                                received and is currently being reviewed. Your
+                                                booking reference is <strong>{confirmation.BookingReference}</strong> —
+                                                please quote it in any follow-up correspondence.
                                             </p>
 
                                             <!-- Booking card -->
@@ -350,6 +348,25 @@ namespace Infrastructure.Services
                                                             cellpadding="0"
                                                             border="0"
                                                         >
+
+                                                            <tr>
+                                                                <td style="
+                                                                    padding: 8px 0;
+                                                                    font-size: 14px;
+                                                                    color: #6b7280;
+                                                                ">
+                                                                    Reference
+                                                                </td>
+
+                                                                <td align="right" style="
+                                                                    padding: 8px 0;
+                                                                    font-size: 14px;
+                                                                    font-weight: bold;
+                                                                    color: #12d3de;
+                                                                ">
+                                                                    {confirmation.BookingReference}
+                                                                </td>
+                                                            </tr>
 
                                                             <tr>
                                                                 <td style="
@@ -526,6 +543,7 @@ namespace Infrastructure.Services
 
                 BOOKING DETAILS
                 ----------------
+                Reference: {confirmation.BookingReference}
                 Meeting type: {FormatMeetingType(confirmation.Meeting)}
                 Date: {confirmation.BookingDate:dddd, d MMMM yyyy}
                 Time: {confirmation.BookingTime:h:mm tt}
@@ -554,6 +572,5 @@ namespace Infrastructure.Services
                 _ => meeting.ToString()
             };
         }
-
     }
 }

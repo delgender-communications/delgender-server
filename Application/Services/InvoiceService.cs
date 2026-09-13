@@ -12,12 +12,18 @@ namespace Application.Services
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly ICustomerRepository _customerRepository;
         private readonly IEmailService _emailService;
+        private readonly IInvoicePdfService _pdfService;
 
-        public InvoiceService(IInvoiceRepository invoiceRepository, ICustomerRepository customerRepository, IEmailService emailService)
+        public InvoiceService(
+            IInvoiceRepository invoiceRepository,
+            ICustomerRepository customerRepository,
+            IEmailService emailService,
+            IInvoicePdfService pdfService)
         {
             _invoiceRepository = invoiceRepository;
             _customerRepository = customerRepository;
             _emailService = emailService;
+            _pdfService = pdfService;
         }
 
         public async Task<InvoiceDto> CreateAsync(CreateInvoiceDto dto, int staffId)
@@ -53,7 +59,7 @@ namespace Application.Services
 
             if (invoice.Status != InvoiceStatus.Draft)
             {
-                throw new InvalidOperationException("Only draft invoices can be edited.");
+                throw new InvalidOperationException("Only draft invoices can be edited. Once an invoice is sent, it's locked.");
             }
 
             invoice.DueDate = dto.DueDate;
@@ -114,7 +120,8 @@ namespace Application.Services
             var invoice = await _invoiceRepository.GetByIdWithDetailsAsync(id);
             if (invoice is null) return null;
 
-            await _emailService.SendInvoiceAsync(invoice, dto.Message);
+            var pdfBytes = _pdfService.Generate(invoice);
+            await _emailService.SendInvoiceAsync(invoice, dto.Message, pdfBytes);
 
             if (invoice.Status == InvoiceStatus.Draft)
             {
@@ -124,6 +131,29 @@ namespace Application.Services
             }
 
             return ToDto(invoice);
+        }
+
+        public async Task<(byte[] Bytes, string FileName)?> GeneratePdfAsync(int id)
+        {
+            var invoice = await _invoiceRepository.GetByIdWithDetailsAsync(id);
+            if (invoice is null) return null;
+
+            var bytes = _pdfService.Generate(invoice);
+            return (bytes, $"{invoice.InvoiceNumber}.pdf");
+        }
+
+        public async Task<int> RefreshOverdueInvoicesAsync()
+        {
+            var candidates = await _invoiceRepository.GetOverdueCandidatesAsync();
+
+            foreach (var invoice in candidates)
+            {
+                invoice.Status = InvoiceStatus.Overdue;
+                invoice.UpdatedAt = DateTime.UtcNow;
+                await _invoiceRepository.UpdateAsync(invoice);
+            }
+
+            return candidates.Count;
         }
 
         private async Task<string> GenerateInvoiceNumberAsync()
@@ -159,38 +189,47 @@ namespace Application.Services
             invoice.TotalAmount = invoice.Items.Sum(i => i.TotalAmount);
         }
 
-        private static InvoiceDto ToDto(Invoice invoice) => new()
+        private static InvoiceDto ToDto(Invoice invoice)
         {
-            Id = invoice.Id,
-            InvoiceNumber = invoice.InvoiceNumber,
-            CustomerId = invoice.CustomerId,
-            CustomerName = invoice.Customer?.FullName ?? string.Empty,
-            CustomerEmail = invoice.Customer?.Email ?? string.Empty,
-            CustomerCompany = invoice.Customer?.CompanyName ?? string.Empty,
-            BookingId = invoice.BookingId,
-            CreatedByStaffName = invoice.CreatedByStaff is null ? null : $"{invoice.CreatedByStaff.Name} {invoice.CreatedByStaff.Surname}",
-            IssueDate = invoice.IssueDate,
-            DueDate = invoice.DueDate,
-            Status = invoice.Status,
-            Subtotal = invoice.Subtotal,
-            TaxAmount = invoice.TaxAmount,
-            DiscountAmount = invoice.DiscountAmount,
-            TotalAmount = invoice.TotalAmount,
-            PaidAt = invoice.PaidAt,
-            PaymentReference = invoice.PaymentReference,
-            Notes = invoice.Notes,
-            CreatedAt = invoice.CreatedAt,
-            UpdatedAt = invoice.UpdatedAt,
-            Items = invoice.Items.Select(i => new InvoiceItemDto
+            // Defensive display-only fallback: if the background sweep hasn't caught
+            // this one yet, still show it as Overdue rather than stale "Sent".
+            var displayStatus = invoice.Status == InvoiceStatus.Sent && invoice.DueDate.Date < DateTime.UtcNow.Date
+                ? InvoiceStatus.Overdue
+                : invoice.Status;
+
+            return new()
             {
-                Id = i.Id,
-                Description = i.Description,
-                Quantity = i.Quantity,
-                UnitPrice = i.UnitPrice,
-                TaxRate = i.TaxRate,
-                DiscountAmount = i.DiscountAmount,
-                TotalAmount = i.TotalAmount
-            }).ToList()
-        };
+                Id = invoice.Id,
+                InvoiceNumber = invoice.InvoiceNumber,
+                CustomerId = invoice.CustomerId,
+                CustomerName = invoice.Customer?.FullName ?? string.Empty,
+                CustomerEmail = invoice.Customer?.Email ?? string.Empty,
+                CustomerCompany = invoice.Customer?.CompanyName ?? string.Empty,
+                BookingId = invoice.BookingId,
+                CreatedByStaffName = invoice.CreatedByStaff is null ? null : $"{invoice.CreatedByStaff.Name} {invoice.CreatedByStaff.Surname}",
+                IssueDate = invoice.IssueDate,
+                DueDate = invoice.DueDate,
+                Status = displayStatus,
+                Subtotal = invoice.Subtotal,
+                TaxAmount = invoice.TaxAmount,
+                DiscountAmount = invoice.DiscountAmount,
+                TotalAmount = invoice.TotalAmount,
+                PaidAt = invoice.PaidAt,
+                PaymentReference = invoice.PaymentReference,
+                Notes = invoice.Notes,
+                CreatedAt = invoice.CreatedAt,
+                UpdatedAt = invoice.UpdatedAt,
+                Items = invoice.Items.Select(i => new InvoiceItemDto
+                {
+                    Id = i.Id,
+                    Description = i.Description,
+                    Quantity = i.Quantity,
+                    UnitPrice = i.UnitPrice,
+                    TaxRate = i.TaxRate,
+                    DiscountAmount = i.DiscountAmount,
+                    TotalAmount = i.TotalAmount
+                }).ToList()
+            };
+        }
     }
 }

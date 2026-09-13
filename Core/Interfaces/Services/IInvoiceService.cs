@@ -12,5 +12,7 @@ namespace Core.Interfaces.Services
         Task<PagedResultDto<InvoiceDto>> GetAllAsync(int page, int pageSize, InvoiceStatus? status, int? customerId);
         Task<InvoiceDto?> UpdateStatusAsync(int id, UpdateInvoiceStatusDto dto);
         Task<InvoiceDto?> SendAsync(int id, SendInvoiceDto dto);
+        Task<int> RefreshOverdueInvoicesAsync();
+        Task<(byte[] Bytes, string FileName)?> GeneratePdfAsync(int id);
     }
 }

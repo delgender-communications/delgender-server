@@ -9,5 +9,6 @@
         public string Email { get; set; } = string.Empty;
         public string PhoneNumber { get; set; } = string.Empty;
         public string Industry { get; set; } = string.Empty;
+        public string? IdNumber { get; set; }
     }
 }

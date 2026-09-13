@@ -12,6 +12,7 @@
         public string PhoneNumber { get; set; } = null!;
 
         public string Industry { get; set; } = null!;
+        public string? IdNumber { get; set; }
 
         public bool ContactPermission { get; set; } = false;
 
