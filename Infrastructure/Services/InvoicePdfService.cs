@@ -121,15 +121,15 @@ namespace Infrastructure.Services
 
                             foreach (var item in invoice.Items)
                             {
-                                table.Cell().PaddingTop(8).PaddingBottom(14).BorderBottom(1).BorderColor(BorderHex)
+                                table.Cell().PaddingTop(8).PaddingBottom(20).BorderBottom(1).BorderColor(BorderHex)
                                     .Text(item.Description).FontSize(9.5f);
-                                table.Cell().PaddingTop(8).PaddingBottom(14).BorderBottom(1).BorderColor(BorderHex)
+                                table.Cell().PaddingTop(8).PaddingBottom(20).BorderBottom(1).BorderColor(BorderHex)
                                     .Text(item.Quantity.ToString("0.##")).FontSize(9.5f);
-                                table.Cell().PaddingTop(8).PaddingBottom(14).BorderBottom(1).BorderColor(BorderHex)
+                                table.Cell().PaddingTop(8).PaddingBottom(20).BorderBottom(1).BorderColor(BorderHex)
                                     .AlignRight().Text($"R{item.UnitPrice:N2}").FontSize(9.5f);
-                                table.Cell().PaddingTop(8).PaddingBottom(14).BorderBottom(1).BorderColor(BorderHex)
+                                table.Cell().PaddingTop(8).PaddingBottom(20).BorderBottom(1).BorderColor(BorderHex)
                                     .AlignRight().Text($"{item.TaxRate:0.#}%").FontSize(9.5f);
-                                table.Cell().PaddingTop(8).PaddingBottom(14).BorderBottom(1).BorderColor(BorderHex)
+                                table.Cell().PaddingTop(8).PaddingBottom(20).BorderBottom(1).BorderColor(BorderHex)
                                     .AlignRight().Text($"R{item.TotalAmount:N2}").FontSize(9.5f).Bold();
                             }
                         });
