@@ -157,45 +157,76 @@ namespace Application.Services
 
         private async Task SendConfirmationAsync(Booking booking, Confirmation confirmation)
         {
-            var confirmationDto = new ConfirmationDto
-            {
-                Id = confirmation.Id,
-                BookingId = booking.Id,
-                FullName = booking.Customer.FullName,
-                CompanyName = booking.Customer.CompanyName,
-                HelpWith = booking.HelpWith,
-                Meeting = booking.Meeting,
-                BookingDate = booking.Date,
-                BookingTime = booking.Time
-            };
-
-            confirmation.Status = ConfirmationStatus.Pending;
-            await _confirmationRepository.UpdateAsync(confirmation);
+            var bookingId = booking.Id;
+            var confirmationId = confirmation.Id;
 
             _backgroundTaskQueue.Enqueue(async (services, cancellationToken) =>
             {
+                var confirmationRepository =
+                    services.GetRequiredService<IConfirmationRepository>();
+
+                var bookingRepository =
+                    services.GetRequiredService<IBookingRepository>();
+
+                var emailService =
+                    services.GetRequiredService<IEmailService>();
+
+                Confirmation? currentConfirmation = null;
+
                 try
                 {
-                    var emailService = services.GetRequiredService<IEmailService>();
+                    var currentBooking =
+                        await bookingRepository.GetByIdBookingAsync(bookingId);
+
+                    if (currentBooking is null)
+                    {
+                        return;
+                    }
+
+                    currentConfirmation =
+                        await confirmationRepository.GetByIdAsync(confirmationId);
+
+                    if (currentConfirmation is null)
+                    {
+                        return;
+                    }
+
+                    var confirmationDto = new ConfirmationDto
+                    {
+                        Id = currentConfirmation.Id,
+                        BookingId = currentBooking.Id,
+                        FullName = currentBooking.Customer.FullName,
+                        CompanyName = currentBooking.Customer.CompanyName,
+                        HelpWith = currentBooking.HelpWith,
+                        Meeting = currentBooking.Meeting,
+                        BookingDate = currentBooking.Date,
+                        BookingTime = currentBooking.Time
+                    };
 
                     await emailService.SendBookingConfirmationAsync(
                         confirmationDto,
-                        booking.Customer.Email);
+                        currentBooking.Customer.Email);
 
-                    confirmation.Status = ConfirmationStatus.Sent;
+                    currentConfirmation.Status = ConfirmationStatus.Sent;
+                    currentConfirmation.FailureReason = null;
+
+                    await confirmationRepository.UpdateAsync(
+                        currentConfirmation);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(
-                        $"Failed to send confirmation email: {ex.Message}");
+                        $"Failed to send confirmation email: {ex}");
 
-                    confirmation.Status = ConfirmationStatus.Failed;
-                    confirmation.FailureReason = ex.Message;
+                    if (currentConfirmation is not null)
+                    {
+                        currentConfirmation.Status = ConfirmationStatus.Failed;
+                        currentConfirmation.FailureReason = ex.Message;
+
+                        await confirmationRepository.UpdateAsync(
+                            currentConfirmation);
+                    }
                 }
-
-                await services
-                    .GetRequiredService<IConfirmationRepository>()
-                    .UpdateAsync(confirmation);
             });
         }
 
