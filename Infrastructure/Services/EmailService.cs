@@ -31,7 +31,7 @@ namespace Infrastructure.Services
 
             var message = new EmailMessage
             {
-                From = "Delgender Communications <bookings@delgendercommunications.site>",
+                From = "Delgender Communications <bookings@delgendercommunications.co.za>",
                 To = recipientEmail,
                 Subject = "Your consultation booking has been received",
                 HtmlBody = _renderer.Render("BookingConfirmation.html", tokens),
@@ -89,7 +89,7 @@ namespace Infrastructure.Services
 
             var email = new EmailMessage
             {
-                From = "Delgender Communications <bookings@delgendercommunications.site>",
+                From = "Delgender Communications <bookings@delgendercommunications.co.za>",
                 To = booking.Customer.Email,
                 Subject = subject,
                 HtmlBody = _renderer.Render("Layout.html", tokens),
@@ -169,7 +169,7 @@ namespace Infrastructure.Services
 
             var email = new EmailMessage
             {
-                From = "Delgender Communications <billing@delgendercommunications.site>",
+                From = "Delgender Communications <billing@delgendercommunications.co.za>",
                 To = invoice.Customer.Email,
                 Subject = $"Invoice {invoice.InvoiceNumber} from Delgender Communications",
                 HtmlBody = _renderer.Render("Layout.html", tokens),
