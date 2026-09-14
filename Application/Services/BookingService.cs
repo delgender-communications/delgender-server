@@ -59,6 +59,9 @@ namespace Application.Services
             };
 
             booking = await _bookingRepository.CreateAsync(booking);
+            booking.BookingReference = $"#BK-{booking.Id:D4}";
+
+            await _bookingRepository.UpdateAsync(booking);
 
             var confirmation = new Confirmation
             {
@@ -233,29 +236,37 @@ namespace Application.Services
         private static BookingDto ToDto(Booking booking) => new()
         {
             Id = booking.Id,
+            BookingReference = booking.BookingReference,
+
             FullName = booking.Customer.FullName,
             JobTitle = booking.Customer.JobTitle,
             CompanyName = booking.Customer.CompanyName,
             Email = booking.Customer.Email,
             PhoneNumber = booking.Customer.PhoneNumber,
             Industry = booking.Customer.Industry,
+
             HelpWith = booking.HelpWith,
             ProblemDescription = booking.ProblemDescription,
             SessionGoal = booking.SessionGoal,
+
             Meeting = booking.Meeting,
             Date = booking.Date,
             Time = booking.Time,
+
             ContactPermission = booking.Customer.ContactPermission,
+
             CreatedAt = booking.CreatedAt,
             UpdatedAt = booking.UpdatedAt,
+
             Status = booking.Status,
+
             RespondedByStaffName = booking.RespondedByStaff is null
-                ? null
-                : $"{booking.RespondedByStaff.Name} {booking.RespondedByStaff.Surname}",
+        ? null
+        : $"{booking.RespondedByStaff.Name} {booking.RespondedByStaff.Surname}",
+
             RespondedAt = booking.RespondedAt,
             ResponseMessage = booking.ResponseMessage,
             DeclineReason = booking.DeclineReason
         };
-
     }
 }

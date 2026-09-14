@@ -5,6 +5,7 @@ namespace Core.DTOs.Booking
     public class BookingDto
     {
         public int Id { get; set; }
+        public string BookingReference { get; set; } = null!;
         public string FullName { get; set; } = string.Empty;
         public string? JobTitle { get; set; }
         public string CompanyName { get; set; } = string.Empty;
