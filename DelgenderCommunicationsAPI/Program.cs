@@ -86,8 +86,6 @@ try
     builder.Services.AddScoped<IInvoicePdfService, InvoicePdfService>();
     QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
-    // Fire-and-forget queue for cheap reconciliation work (e.g. overdue invoices)
-    // kicked off on login instead of a scheduler - see AuthService.EnqueueOverdueInvoiceSweep.
     builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
     builder.Services.AddHostedService<QueuedHostedService>();
 
@@ -172,7 +170,6 @@ try
                 "Cors:AllowedOrigin is not configured.");
         }
 
-        // Supports a single origin or a comma-separated list (public site + staff portal)
         var origins = allowedOrigin
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
@@ -188,10 +185,8 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await Infrastructure.Data.AdminSeeder.SeedAsync(db, app.Configuration);
+        await AdminSeeder.SeedAsync(db, app.Configuration);
 
-        // covers the gap while the app was asleep (Railway etc.) - the login-triggered
-        // sweep in AuthService then keeps it current from here on
         var invoiceService = scope.ServiceProvider.GetRequiredService<IInvoiceService>();
         await invoiceService.RefreshOverdueInvoicesAsync();
     }
