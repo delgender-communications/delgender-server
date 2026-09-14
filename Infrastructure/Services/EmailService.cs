@@ -77,7 +77,6 @@ namespace Infrastructure.Services
             var tokens = new Dictionary<string, string?>
             {
                 ["Heading"] = subject,
-                ["Intro"] = $"Hi {booking.Customer.FullName},",
                 ["BodyHtml"] = FormatMessageAsHtml(message),
                 ["FooterNote"] = $"Booking reference {booking.BookingReference} · {statusLabel} · {bookingDateTime}",
                 ["Year"] = DateTime.UtcNow.Year.ToString(),

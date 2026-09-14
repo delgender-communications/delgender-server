@@ -42,7 +42,8 @@ namespace Infrastructure.Services
                             {
                                 col.Item().Text("Delgender Communications").FontSize(15).Bold();
                                 col.Item().Text("Strategic Communications & Brand Consultancy").FontSize(9).FontColor(MutedHex);
-                                col.Item().Text("delgendercommunications.site").FontSize(9).FontColor(MutedHex);
+                                col.Item().Text("https://delgendercommunications.co.za").FontSize(9).FontColor(MutedHex);
+                                col.Item().Text("delgendercommunications@gmail.com").FontSize(9).FontColor(MutedHex);
                             });
 
                             row.ConstantItem(160).Column(col =>
@@ -85,11 +86,6 @@ namespace Infrastructure.Services
                                     r.RelativeItem().Text("Due date").FontSize(9.5f).FontColor(MutedHex);
                                     r.RelativeItem().AlignRight().Text(invoice.DueDate.ToString("d MMMM yyyy")).FontSize(9.5f).Bold();
                                 });
-                                meta.Item().PaddingTop(3).Row(r =>
-                                {
-                                    r.RelativeItem().Text("Status").FontSize(9.5f).FontColor(MutedHex);
-                                    r.RelativeItem().AlignRight().Text(invoice.Status.ToString()).FontSize(9.5f).Bold();
-                                });
                                 if (invoice.PaidAt is not null)
                                 {
                                     meta.Item().PaddingTop(3).Row(r =>
@@ -125,15 +121,15 @@ namespace Infrastructure.Services
 
                             foreach (var item in invoice.Items)
                             {
-                                table.Cell().PaddingVertical(8).BorderBottom(1).BorderColor(BorderHex)
+                                table.Cell().PaddingTop(8).PaddingBottom(14).BorderBottom(1).BorderColor(BorderHex)
                                     .Text(item.Description).FontSize(9.5f);
-                                table.Cell().PaddingVertical(8).BorderBottom(1).BorderColor(BorderHex)
+                                table.Cell().PaddingTop(8).PaddingBottom(14).BorderBottom(1).BorderColor(BorderHex)
                                     .Text(item.Quantity.ToString("0.##")).FontSize(9.5f);
-                                table.Cell().PaddingVertical(8).BorderBottom(1).BorderColor(BorderHex)
+                                table.Cell().PaddingTop(8).PaddingBottom(14).BorderBottom(1).BorderColor(BorderHex)
                                     .AlignRight().Text($"R{item.UnitPrice:N2}").FontSize(9.5f);
-                                table.Cell().PaddingVertical(8).BorderBottom(1).BorderColor(BorderHex)
+                                table.Cell().PaddingTop(8).PaddingBottom(14).BorderBottom(1).BorderColor(BorderHex)
                                     .AlignRight().Text($"{item.TaxRate:0.#}%").FontSize(9.5f);
-                                table.Cell().PaddingVertical(8).BorderBottom(1).BorderColor(BorderHex)
+                                table.Cell().PaddingTop(8).PaddingBottom(14).BorderBottom(1).BorderColor(BorderHex)
                                     .AlignRight().Text($"R{item.TotalAmount:N2}").FontSize(9.5f).Bold();
                             }
                         });
