@@ -1,0 +1,20 @@
+{{#if MessageHtml}}
+<p style="margin:0 0 20px;font-size:15px;line-height:24px;color:#374151;">{{MessageHtml}}</p>
+{{/if}}
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;">
+    <tr>
+        <td style="padding:16px 18px;font-size:14px;color:#6b7280;">Invoice number</td>
+        <td align="right" style="padding:16px 18px;font-size:14px;font-weight:bold;color:#111827;">{{InvoiceNumber}}</td>
+    </tr>
+    <tr>
+        <td style="padding:0 18px 16px;font-size:14px;color:#6b7280;border-top:1px solid #e5e7eb;">Due date</td>
+        <td align="right" style="padding:16px 18px 16px;font-size:14px;font-weight:bold;color:#111827;border-top:1px solid #e5e7eb;">{{DueDate}}</td>
+    </tr>
+    <tr>
+        <td style="padding:0 18px 16px;font-size:15px;color:#111827;border-top:1px solid #e5e7eb;">Total due</td>
+        <td align="right" style="padding:16px 18px 16px;font-size:20px;font-weight:bold;color:#12d3de;border-top:1px solid #e5e7eb;">{{TotalDue}}</td>
+    </tr>
+</table>
+<p style="margin:18px 0 0;font-size:13.5px;color:#6b7280;">
+    The full breakdown is in the attached PDF (<strong>{{InvoiceFileName}}</strong>).
+</p>

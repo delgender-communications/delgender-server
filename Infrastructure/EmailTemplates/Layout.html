@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{Heading}}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial, Helvetica, sans-serif;color:#1f2937;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f4f6f8;padding:40px 16px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;">
+                    <tr>
+                        <td align="center" style="padding:32px 30px 24px;">
+                            <img src="https://delgendercommunications.site/favicon.png" alt="Delgender Communications" width="160" style="display:block;max-width:160px;height:auto;margin-bottom:24px;">
+                            <h1 style="margin:0;font-size:24px;line-height:32px;color:#111827;">{{Heading}}</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0 30px 32px;">
+                            <p style="margin:0 0 20px;font-size:16px;line-height:26px;">{{Intro}}</p>
+
+                            {{#if Highlight}}
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px;">
+                                <tr>
+                                    <td align="center" style="padding:22px 24px;background-color:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;">
+                                        <p style="margin:0 0 6px;font-size:32px;font-weight:bold;letter-spacing:6px;color:#111827;">{{Highlight}}</p>
+                                        <p style="margin:0;font-size:12px;color:#6b7280;">{{HighlightLabel}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {{/if}}
+
+                            {{BodyHtml}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:24px 30px;background-color:#f8fafc;border-top:1px solid #e5e7eb;text-align:center;">
+                            <p style="margin:0 0 8px;font-size:12px;line-height:19px;color:#6b7280;">{{FooterNote}}</p>
+                            <p style="margin:0;font-size:11px;color:#9ca3af;">© {{Year}} Delgender Communications</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -27,8 +27,8 @@
     <ProjectReference Include="..\Core\Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="EmailTemplates\" />
+    <ItemGroup>
+    <Content Include="EmailTemplates\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
