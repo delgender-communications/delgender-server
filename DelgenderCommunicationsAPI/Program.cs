@@ -40,7 +40,7 @@ try
     builder.Services.AddOptions();
     builder.Services.AddHttpClient();
 
-    builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+    builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
     var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()
         ?? throw new InvalidOperationException("Jwt configuration section is missing.");
 
