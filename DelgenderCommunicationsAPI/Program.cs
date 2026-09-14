@@ -75,6 +75,7 @@ try
         return ResendClient.Create(apiKey);
     });
 
+    builder.Services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
     builder.Services.AddScoped<IEmailService, EmailService>();
     builder.Services.AddScoped<IBookingService, BookingService>();
     builder.Services.AddScoped<IAuthService, AuthService>();

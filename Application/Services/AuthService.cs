@@ -19,24 +19,16 @@ namespace Application.Services
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly ITrustedDeviceRepository _trustedDeviceRepository;
         private readonly ILoginOtpRepository _loginOtpRepository;
-        private readonly IEmailService _emailService;
         private readonly IBackgroundTaskQueue _backgroundTaskQueue;
         private readonly JwtSettings _jwtSettings;
 
-        public AuthService(
-            IStaffRepository staffRepository,
-            IRefreshTokenRepository refreshTokenRepository,
-            ITrustedDeviceRepository trustedDeviceRepository,
-            ILoginOtpRepository loginOtpRepository,
-            IEmailService emailService,
-            IBackgroundTaskQueue backgroundTaskQueue,
-            IOptions<JwtSettings> jwtSettings)
+        public AuthService(IStaffRepository staffRepository, IRefreshTokenRepository refreshTokenRepository, IBackgroundTaskQueue backgroundTaskQueue,
+            ITrustedDeviceRepository trustedDeviceRepository,ILoginOtpRepository loginOtpRepository, IOptions<JwtSettings> jwtSettings)
         {
             _staffRepository = staffRepository;
             _refreshTokenRepository = refreshTokenRepository;
             _trustedDeviceRepository = trustedDeviceRepository;
             _loginOtpRepository = loginOtpRepository;
-            _emailService = emailService;
             _backgroundTaskQueue = backgroundTaskQueue;
             _jwtSettings = jwtSettings.Value;
         }
@@ -93,7 +85,21 @@ namespace Application.Services
 
             await _loginOtpRepository.CreateAsync(otp);
 
-            await _emailService.SendOtpAsync(staff.Email, staff.Name, code, _jwtSettings.OtpExpiryMinutes);
+            // send email in background so it doesn't block the login request
+            var email = staff.Email;
+            var name = staff.Name;
+            var otpExpiryMinutes = _jwtSettings.OtpExpiryMinutes;
+
+            _backgroundTaskQueue.Enqueue(async (services, cancellationToken) =>
+            {
+                var emailService = services.GetRequiredService<IEmailService>();
+
+                await emailService.SendOtpAsync(
+                    email,
+                    name,
+                    code,
+                    otpExpiryMinutes);
+            });
 
             var pendingToken = GeneratePendingToken(staff.Id);
 
@@ -236,9 +242,6 @@ namespace Application.Services
 
         private void EnqueueOverdueInvoiceSweep()
         {
-            // Fire-and-forget: runs after this request finishes responding, in its own
-            // DI scope. Doesn't block login, and doesn't need a scheduler running while
-            // the app is asleep - it just piggybacks on the next person who logs in.
             _backgroundTaskQueue.Enqueue(async (services, cancellationToken) =>
             {
                 var invoiceService = services.GetRequiredService<IInvoiceService>();

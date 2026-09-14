@@ -4,6 +4,7 @@ using Core.Entities;
 using Core.Enums;
 using Core.Interfaces.Repositories;
 using Core.Interfaces.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Application.Services
 {
@@ -13,16 +14,16 @@ namespace Application.Services
         private readonly IBookingRepository _bookingRepository;
         private readonly IConfirmationRepository _confirmationRepository;
         private readonly IStaffRepository _staffRepository;
-        private readonly IEmailService _emailService;
+        private readonly IBackgroundTaskQueue _backgroundTaskQueue;
 
         public BookingService(IBookingRepository bookingRepository, IConfirmationRepository confirmationRepository,
-            IEmailService emailService, ICustomerRepository customerRepository, IStaffRepository staffRepository)
+            ICustomerRepository customerRepository, IStaffRepository staffRepository, IBackgroundTaskQueue backgroundTaskQueue)
         {
             _bookingRepository = bookingRepository;
             _confirmationRepository = confirmationRepository;
-            _emailService = emailService;
             _customerRepository = customerRepository;
             _staffRepository = staffRepository;
+            _backgroundTaskQueue = backgroundTaskQueue;
         }
 
         public async Task<BookingDto> CreateAsync(CreateBookingDto dto)
@@ -97,7 +98,8 @@ namespace Application.Services
         {
             if (dto.Status is not (BookingStatus.Confirmed or BookingStatus.Declined))
             {
-                throw new ArgumentException("A response must either confirm or decline the booking.");
+                throw new ArgumentException(
+                    "A response must either confirm or decline the booking.");
             }
 
             var booking = await _bookingRepository.GetByIdBookingAsync(id)
@@ -105,7 +107,8 @@ namespace Application.Services
 
             if (booking.Status != BookingStatus.Pending)
             {
-                throw new InvalidOperationException("This booking has already been responded to.");
+                throw new InvalidOperationException(
+                    "This booking has already been responded to.");
             }
 
             var staff = await _staffRepository.GetByIdAsync(staffId)
@@ -115,8 +118,12 @@ namespace Application.Services
             booking.RespondedByStaffId = staffId;
             booking.RespondedAt = DateTime.UtcNow;
             booking.ResponseMessage = dto.Message;
-            booking.DeclineReason = dto.Status == BookingStatus.Declined ? dto.DeclineReason : null;
+            booking.DeclineReason =
+                dto.Status == BookingStatus.Declined
+                    ? dto.DeclineReason
+                    : null;
             booking.UpdatedAt = DateTime.UtcNow;
+            booking.RespondedByStaff = staff;
 
             await _bookingRepository.UpdateAsync(booking);
 
@@ -124,9 +131,27 @@ namespace Application.Services
                 ? "Your consultation booking has been confirmed"
                 : "An update on your consultation booking request";
 
-            await _emailService.SendBookingResponseAsync(booking, subject, dto.Message);
+            _backgroundTaskQueue.Enqueue(async (services, cancellationToken) =>
+            {
+                var bookingRepository =
+                    services.GetRequiredService<IBookingRepository>();
 
-            booking.RespondedByStaff = staff;
+                var emailService =
+                    services.GetRequiredService<IEmailService>();
+
+                var booking = await bookingRepository.GetByIdBookingAsync(id);
+
+                if (booking is null)
+                {
+                    return;
+                }
+
+                await emailService.SendBookingResponseAsync(
+                    booking,
+                    subject,
+                    dto.Message);
+            });
+
             return ToDto(booking);
         }
 
@@ -144,19 +169,34 @@ namespace Application.Services
                 BookingTime = booking.Time
             };
 
-            try
-            {
-                await _emailService.SendBookingConfirmationAsync(confirmationDto, booking.Customer.Email);
-                confirmation.Status = ConfirmationStatus.Sent;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to send confirmation email: {ex.Message}");
-                confirmation.Status = ConfirmationStatus.Failed;
-                confirmation.FailureReason = ex.Message;
-            }
-
+            confirmation.Status = ConfirmationStatus.Pending;
             await _confirmationRepository.UpdateAsync(confirmation);
+
+            _backgroundTaskQueue.Enqueue(async (services, cancellationToken) =>
+            {
+                try
+                {
+                    var emailService = services.GetRequiredService<IEmailService>();
+
+                    await emailService.SendBookingConfirmationAsync(
+                        confirmationDto,
+                        booking.Customer.Email);
+
+                    confirmation.Status = ConfirmationStatus.Sent;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(
+                        $"Failed to send confirmation email: {ex.Message}");
+
+                    confirmation.Status = ConfirmationStatus.Failed;
+                    confirmation.FailureReason = ex.Message;
+                }
+
+                await services
+                    .GetRequiredService<IConfirmationRepository>()
+                    .UpdateAsync(confirmation);
+            });
         }
 
         private static BookingDto ToDto(Booking booking) => new()
