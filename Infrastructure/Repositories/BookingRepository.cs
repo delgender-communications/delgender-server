@@ -39,22 +39,13 @@ namespace Infrastructure.Repositories
                 .Include(b => b.RespondedByStaff)
                 .FirstOrDefaultAsync(b => b.Id == id);
 
-        public async Task<string> GenerateNextReferenceAsync()
-        {
-            var count = await _db.Bookings.CountAsync();
-            return $"#BK-{(count + 1):D4}";
-        }
-
         public async Task<int> GetNextBookingReferenceNumberAsync()
         {
-            var maxNumber = await _db.Bookings
-                .Select(b => b.BookingReference)
-                .Where(r => r != null && r.StartsWith("#BK-"))
-                .Select(r => int.Parse(r.Substring(4)))
-                .DefaultIfEmpty(0)
-                .MaxAsync();
+            var max = await _db.Bookings
+                .Select(b => (int?)b.BookingNumber)
+                .MaxAsync() ?? 0;
 
-            return maxNumber + 1;
+            return max + 1;
         }
     }
 }

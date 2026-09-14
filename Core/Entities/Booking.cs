@@ -6,6 +6,7 @@ namespace Core.Entities
     {
         public int Id { get; set; }
 
+        public int BookingNumber { get; set; }
         public string BookingReference { get; set; } = null!;
 
         public int CustomerId { get; set; }

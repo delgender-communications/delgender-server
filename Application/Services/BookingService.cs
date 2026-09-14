@@ -5,6 +5,7 @@ using Core.Enums;
 using Core.Interfaces.Repositories;
 using Core.Interfaces.Services;
 using Microsoft.Extensions.DependencyInjection;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Application.Services
 {
@@ -49,13 +50,13 @@ namespace Application.Services
 
             customer = await _customerRepository.CreateAsync(customer);
 
-            var referenceNumber =
-                await _bookingRepository.GetNextBookingReferenceNumberAsync();
+            var next = await _bookingRepository.GetNextBookingReferenceNumberAsync();
 
             var booking = new Booking
             {
                 CustomerId = customer.Id,
-                BookingReference = $"#BK-{referenceNumber:D4}",
+                BookingNumber = next,
+                BookingReference = $"#BK-{next:D4}",
                 HelpWith = dto.HelpWith,
                 ProblemDescription = dto.ProblemDescription,
                 SessionGoal = dto.SessionGoal,
