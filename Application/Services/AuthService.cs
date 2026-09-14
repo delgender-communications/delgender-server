@@ -303,12 +303,16 @@ namespace Application.Services
 
         private string GeneratePendingToken(int staffId)
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_jwtSettings.Secret));
+
+            var creds = new SigningCredentials(
+                key,
+                SecurityAlgorithms.HmacSha256);
 
             var claims = new List<Claim>
             {
-                new(JwtRegisteredClaimNames.Sub, staffId.ToString()),
+                new(ClaimTypes.NameIdentifier, staffId.ToString()),
                 new("purpose", "otp")
             };
 
@@ -316,7 +320,8 @@ namespace Application.Services
                 issuer: _jwtSettings.Issuer,
                 audience: _jwtSettings.Audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(_jwtSettings.OtpExpiryMinutes),
+                expires: DateTime.UtcNow.AddMinutes(
+                    _jwtSettings.OtpExpiryMinutes),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
@@ -325,33 +330,58 @@ namespace Application.Services
         private int ReadPendingToken(string pendingToken)
         {
             var handler = new JwtSecurityTokenHandler();
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
+
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_jwtSettings.Secret));
 
             try
             {
-                var principal = handler.ValidateToken(pendingToken, new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidIssuer = _jwtSettings.Issuer,
-                    ValidateAudience = true,
-                    ValidAudience = _jwtSettings.Audience,
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = key,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromSeconds(30)
-                }, out _);
+                var principal = handler.ValidateToken(
+                    pendingToken,
+                    new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidIssuer = _jwtSettings.Issuer,
 
-                var purpose = principal?.FindFirst("purpose")?.Value;
+                        ValidateAudience = true,
+                        ValidAudience = _jwtSettings.Audience,
+
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = key,
+
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.FromSeconds(30)
+                    },
+                    out _);
+
+                var purpose = principal.FindFirst("purpose")?.Value;
+
                 if (purpose != "otp")
                 {
-                    throw new UnauthorizedAccessException("Invalid login session.");
+                    throw new UnauthorizedAccessException(
+                        "Invalid login session.");
                 }
 
-                return int.Parse(principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? throw new InvalidOperationException("Invalid token."));
+                var staffIdClaim =
+                    principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (!int.TryParse(staffIdClaim, out var staffId))
+                {
+                    throw new UnauthorizedAccessException(
+                        "Invalid login session.");
+                }
+
+                return staffId;
             }
-            catch (Exception)
+            catch (SecurityTokenExpiredException)
             {
-                throw new UnauthorizedAccessException("Login session expired. Please log in again.");
+                throw new UnauthorizedAccessException(
+                    "Login session expired. Please log in again.");
+            }
+            catch (SecurityTokenException)
+            {
+                throw new UnauthorizedAccessException(
+                    "Invalid login session. Please log in again.");
             }
         }
 
