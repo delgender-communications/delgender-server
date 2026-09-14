@@ -1,0 +1,9 @@
+Hi {{FullName}},
+
+{{#if Message}}
+{{Message}}
+
+{{/if}}
+Invoice {{InvoiceNumber}} — total due {{TotalDue}}, due {{DueDate}}. Full breakdown attached as a PDF.
+
+© {{Year}} Delgender Communications

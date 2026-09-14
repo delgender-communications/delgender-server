@@ -1,0 +1,11 @@
+Hi {{Name}},
+
+An account has been created for you on the Delgender Communications staff portal.
+
+Staff ID: {{StaffId}}
+Email: {{Email}}
+Temporary password: {{TemporaryPassword}}
+
+Sign in at {{LoginUrl}} and set a new password.
+
+© {{Year}} Delgender Communications

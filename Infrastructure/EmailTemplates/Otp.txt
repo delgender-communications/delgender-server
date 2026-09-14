@@ -1,0 +1,7 @@
+Hi {{FirstName}},
+
+Your sign-in code is {{Code}}. It expires in {{ExpiryMinutes}} minutes.
+
+If you didn't try to sign in, you can safely ignore this email.
+
+© {{Year}} Delgender Communications

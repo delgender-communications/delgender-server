@@ -1,0 +1,22 @@
+Hi {{FullName}},
+
+We've received your consultation booking request.
+
+BOOKING DETAILS
+----------------
+Reference: {{BookingReference}}
+Meeting type: {{MeetingType}}
+Date: {{BookingDate}}
+Time: {{BookingTime}}
+
+WHAT'S NEXT?
+----------------
+We'll review your request and confirm your appointment within 24 hours.
+
+Please do not reply to this email.
+This mailbox is not monitored.
+
+If you need to contact us regarding your booking,
+please email delgendercommunications@gmail.com.
+
+© {{Year}} Delgender Communications

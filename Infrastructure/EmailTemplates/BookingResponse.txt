@@ -1,0 +1,7 @@
+Hi {{FullName}},
+
+{{Message}}
+
+Booking reference {{BookingReference}} · {{StatusLabel}} · {{BookingDateTime}}
+
+© {{Year}} Delgender Communications

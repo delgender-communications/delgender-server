@@ -11,6 +11,5 @@
         public int TrustedDeviceDays { get; set; } = 60;
         public int OtpExpiryMinutes { get; set; } = 10;
         public int OtpMaxAttempts { get; set; } = 5;
-
     }
 }
