@@ -8,5 +8,6 @@ namespace Core.Interfaces.Repositories
         Task<IEnumerable<Booking>> GetAllBookingsAsync(int page, int pageSize, BookingStatus? status);
         Task<int> GetTotalCountAsync(BookingStatus? status);
         Task<Booking?> GetByIdBookingAsync(int id);
+        Task<int> GetNextBookingReferenceNumberAsync();
     }
 }

@@ -44,5 +44,17 @@ namespace Infrastructure.Repositories
             var count = await _db.Bookings.CountAsync();
             return $"#BK-{(count + 1):D4}";
         }
+
+        public async Task<int> GetNextBookingReferenceNumberAsync()
+        {
+            var maxNumber = await _db.Bookings
+                .Select(b => b.BookingReference)
+                .Where(r => r != null && r.StartsWith("#BK-"))
+                .Select(r => int.Parse(r.Substring(4)))
+                .DefaultIfEmpty(0)
+                .MaxAsync();
+
+            return maxNumber + 1;
+        }
     }
 }

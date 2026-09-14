@@ -30,7 +30,9 @@ namespace Application.Services
         {
             if (dto == null)
             {
-                throw new ArgumentNullException(nameof(dto), "CreateBookingDto cannot be null.");
+                throw new ArgumentNullException(
+                    nameof(dto),
+                    "CreateBookingDto cannot be null.");
             }
 
             var customer = new Customer
@@ -41,14 +43,19 @@ namespace Application.Services
                 Email = dto.Email,
                 PhoneNumber = dto.PhoneNumber,
                 Industry = dto.Industry,
+                IdNumber = dto.IdNumber,
                 ContactPermission = dto.ContactPermission
             };
 
             customer = await _customerRepository.CreateAsync(customer);
 
+            var referenceNumber =
+                await _bookingRepository.GetNextBookingReferenceNumberAsync();
+
             var booking = new Booking
             {
                 CustomerId = customer.Id,
+                BookingReference = $"#BK-{referenceNumber:D4}",
                 HelpWith = dto.HelpWith,
                 ProblemDescription = dto.ProblemDescription,
                 SessionGoal = dto.SessionGoal,
@@ -59,9 +66,6 @@ namespace Application.Services
             };
 
             booking = await _bookingRepository.CreateAsync(booking);
-            booking.BookingReference = $"#BK-{booking.Id:D4}";
-
-            await _bookingRepository.UpdateAsync(booking);
 
             var confirmation = new Confirmation
             {
@@ -74,6 +78,7 @@ namespace Application.Services
             await SendConfirmationAsync(booking, confirmation);
 
             booking.Customer = customer;
+
             return ToDto(booking);
         }
 
