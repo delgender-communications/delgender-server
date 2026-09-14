@@ -13,7 +13,7 @@ namespace Core.DTOs.Invoice
         public int? BookingId { get; set; }
         public string? CreatedByStaffName { get; set; }
         public DateTime IssueDate { get; set; }
-        public DateTime DueDate { get; set; }
+        public DateOnly DueDate { get; set; }
         public InvoiceStatus Status { get; set; }
         public decimal Subtotal { get; set; }
         public decimal TaxAmount { get; set; }

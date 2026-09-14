@@ -200,7 +200,7 @@ namespace Application.Services
 
         private static InvoiceDto ToDto(Invoice invoice)
         {
-            var displayStatus = invoice.Status == InvoiceStatus.Sent && invoice.DueDate.Date < DateTime.UtcNow.Date
+            var displayStatus = invoice.Status == InvoiceStatus.Sent && invoice.DueDate < DateOnly.FromDateTime(DateTime.UtcNow)
                 ? InvoiceStatus.Overdue
                 : invoice.Status;
 

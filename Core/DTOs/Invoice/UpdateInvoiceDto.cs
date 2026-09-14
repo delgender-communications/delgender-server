@@ -5,7 +5,7 @@ namespace Core.DTOs.Invoice
     public class UpdateInvoiceDto
     {
         [Required]
-        public DateTime DueDate { get; set; }
+        public DateOnly DueDate { get; set; }
 
         [StringLength(1000)]
         public string? Notes { get; set; }

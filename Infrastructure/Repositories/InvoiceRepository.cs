@@ -60,10 +60,10 @@ namespace Infrastructure.Repositories
 
         public async Task<List<Invoice>> GetOverdueCandidatesAsync()
         {
-            var today = DateTime.UtcNow.Date;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
             return await _db.Invoices
-                .Where(i => i.Status == InvoiceStatus.Sent && i.DueDate.Date < today)
+                .Where(i => i.Status == InvoiceStatus.Sent && i.DueDate < today)
                 .ToListAsync();
         }
     }

@@ -18,7 +18,7 @@ namespace Core.Entities
         public Staff? CreatedByStaff { get; set; }
 
         public DateTime IssueDate { get; set; }
-        public DateTime DueDate { get; set; }
+        public DateOnly DueDate { get; set; }
 
         public InvoiceStatus Status { get; set; }
 
