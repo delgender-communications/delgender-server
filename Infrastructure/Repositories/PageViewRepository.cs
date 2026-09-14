@@ -11,11 +11,16 @@ namespace Infrastructure.Repositories
 
         public async Task<List<PageView>> GetForDateAsync(DateOnly date)
         {
-            var start = date.ToDateTime(TimeOnly.MinValue);
-            var end = start.AddDays(1);
+            var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Africa/Johannesburg");
+
+            var startLocal = date.ToDateTime(TimeOnly.MinValue);
+            var endLocal = date.AddDays(1).ToDateTime(TimeOnly.MinValue);
+
+            var startUtc = TimeZoneInfo.ConvertTimeToUtc(startLocal, timeZone);
+            var endUtc = TimeZoneInfo.ConvertTimeToUtc(endLocal, timeZone);
 
             return await _db.PageViews
-                .Where(p => p.VisitedAt >= start && p.VisitedAt < end)
+                .Where(p => p.VisitedAt >= startUtc && p.VisitedAt < endUtc)
                 .ToListAsync();
         }
 
