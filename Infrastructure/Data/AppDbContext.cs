@@ -17,6 +17,7 @@ namespace Infrastructure.Data
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
         public DbSet<TrustedDevice> TrustedDevices => Set<TrustedDevice>();
         public DbSet<LoginOtp> LoginOtps => Set<LoginOtp>();
+        public DbSet<Feedback> Feedbacks => Set<Feedback>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -121,6 +122,25 @@ namespace Infrastructure.Data
 
             modelBuilder.Entity<PageView>()
                 .HasIndex(p => p.VisitorId);
+
+            modelBuilder.Entity<Feedback>()
+                .HasOne(f => f.Customer)
+                .WithMany(c => c.FeedbackRequests)
+                .HasForeignKey(f => f.CustomerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Feedback>()
+                .HasOne(f => f.RequestedByStaff)
+                .WithMany()
+                .HasForeignKey(f => f.RequestedByStaffId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Feedback>()
+                .HasIndex(f => f.RequestToken)
+                .IsUnique();
+
+            modelBuilder.Entity<Customer>()
+                .HasIndex(c => c.Email);
         }
     }
 }

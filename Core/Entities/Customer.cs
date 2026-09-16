@@ -1,4 +1,6 @@
-﻿namespace Core.Entities
+﻿using Core.Enums;
+
+namespace Core.Entities
 {
     public class Customer
     {
@@ -16,10 +18,15 @@
 
         public bool ContactPermission { get; set; } = false;
 
+        public ClientStatus Status { get; set; } = ClientStatus.Pending;
+        public DateTime? WorkingSince { get; set; }
+        public DateTime? WorkingUntil { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
         public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+        public ICollection<Feedback> FeedbackRequests { get; set; } = new List<Feedback>();
     }
 }
