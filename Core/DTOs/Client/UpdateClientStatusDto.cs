@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.DTOs.Client
 {
-    internal class UpdateClientStatusDto
+    public class UpdateClientStatusDto
     {
         [Required]
         public ClientStatus Status { get; set; }

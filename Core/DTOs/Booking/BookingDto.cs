@@ -24,6 +24,7 @@ namespace Core.DTOs.Booking
 
         public BookingStatus Status { get; set; } = BookingStatus.Pending;
         public string? RespondedByStaffName { get; set; }
+        public string? RespondedByStaffProfilePictureUrl { get; set; }
         public DateTime? RespondedAt { get; set; }
         public string? ResponseMessage { get; set; }
         public string? DeclineReason { get; set; }

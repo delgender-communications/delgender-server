@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.DTOs.Client
 {
-    internal class CreateClientDto
+    public class CreateClientDto
     {
         [Required, StringLength(100)]
         public string FullName { get; set; } = string.Empty;

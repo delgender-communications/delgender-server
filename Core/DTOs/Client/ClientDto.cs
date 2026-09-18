@@ -2,7 +2,7 @@
 
 namespace Core.DTOs.Client
 {
-    internal class ClientDto
+    public class ClientDto
     {
         public int Id { get; set; }
 

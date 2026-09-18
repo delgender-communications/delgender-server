@@ -14,5 +14,6 @@ namespace Core.Interfaces.Services
         Task SendStaffWelcomeAsync(Staff staff, string temporaryPassword, string loginUrl);
 
         Task SendInvoiceAsync(Invoice invoice, string? message, byte[] pdfBytes);
+        Task SendFeedbackRequestAsync(Customer customer);
     }
 }

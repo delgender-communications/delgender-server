@@ -36,19 +36,37 @@ namespace Application.Services
                     "CreateBookingDto cannot be null.");
             }
 
-            var customer = new Customer
-            {
-                FullName = dto.FullName,
-                JobTitle = dto.JobTitle,
-                CompanyName = dto.CompanyName,
-                Email = dto.Email,
-                PhoneNumber = dto.PhoneNumber,
-                Industry = dto.Industry,
-                IdNumber = dto.IdNumber,
-                ContactPermission = dto.ContactPermission
-            };
+            var customer = await _customerRepository.GetByEmailAsync(dto.Email);
 
-            customer = await _customerRepository.CreateAsync(customer);
+            if (customer is null)
+            {
+                customer = new Customer
+                {
+                    FullName = dto.FullName,
+                    JobTitle = dto.JobTitle,
+                    CompanyName = dto.CompanyName,
+                    Email = dto.Email,
+                    PhoneNumber = dto.PhoneNumber,
+                    Industry = dto.Industry,
+                    IdNumber = dto.IdNumber,
+                    ContactPermission = dto.ContactPermission
+                };
+
+                customer = await _customerRepository.CreateAsync(customer);
+            }
+            else
+            {
+                customer.FullName = dto.FullName;
+                customer.JobTitle = dto.JobTitle;
+                customer.CompanyName = dto.CompanyName;
+                customer.PhoneNumber = dto.PhoneNumber;
+                customer.Industry = dto.Industry;
+                customer.IdNumber = dto.IdNumber ?? customer.IdNumber;
+                customer.ContactPermission = dto.ContactPermission;
+                customer.UpdatedAt = DateTime.UtcNow;
+
+                await _customerRepository.UpdateAsync(customer);
+            }
 
             var next = await _bookingRepository.GetNextBookingReferenceNumberAsync();
 

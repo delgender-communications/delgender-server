@@ -187,6 +187,34 @@ namespace Infrastructure.Services
             await _resend.EmailSendAsync(email);
         }
 
+        public async Task SendFeedbackRequestAsync(Customer customer)
+        {
+            var tokens = new Dictionary<string, string?>
+            {
+                ["Heading"] = "Thank you for working with us",
+                ["Intro"] = $"Hi {customer.FullName},",
+                ["BodyHtml"] = _renderer.Render("FeedbackRequestBody.html", new Dictionary<string, string?>
+                {
+                    ["CompanyName"] = customer.CompanyName
+                }),
+                ["FooterNote"] = "Please do not reply to this email. This mailbox is not monitored.",
+                ["Year"] = DateTime.UtcNow.Year.ToString(),
+                ["FullName"] = customer.FullName,
+                ["CompanyName"] = customer.CompanyName
+            };
+
+            var email = new EmailMessage
+            {
+                From = "Delgender Communications <hello@delgendercommunications.site>",
+                To = customer.Email,
+                Subject = "We'd love your feedback",
+                HtmlBody = _renderer.Render("Layout.html", tokens),
+                TextBody = _renderer.Render("FeedbackRequest.txt", tokens)
+            };
+
+            await _resend.EmailSendAsync(email);
+        }
+
         private static string FormatMessageAsHtml(string message) =>
             string.Join("", message
                 .Split('\n')
