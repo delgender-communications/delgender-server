@@ -36,6 +36,15 @@ namespace DelgenderCommunicationsAPI.Controllers
             return Ok(result);
         }
 
+        [HttpPost("resend-otp")]
+        [AllowAnonymous]
+        [EnableRateLimiting("booking")]
+        public async Task<ActionResult<ResendOtpResultDto>> ResendOtp([FromBody] ResendOtpRequestDto dto)
+        {
+            var result = await _authService.ResendOtpAsync(dto.PendingToken);
+            return Ok(result);
+        }
+
         [HttpPost("refresh")]
         [AllowAnonymous]
         public async Task<ActionResult<AuthTokensDto>> Refresh([FromBody] RefreshRequestDto dto)
@@ -62,9 +71,10 @@ namespace DelgenderCommunicationsAPI.Controllers
 
         [HttpGet("trusted-devices")]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<TrustedDeviceDto>>> GetTrustedDevices()
+        public async Task<ActionResult<IEnumerable<TrustedDeviceDto>>> GetTrustedDevices(
+            [FromQuery] string? deviceToken = null)
         {
-            var devices = await _authService.GetTrustedDevicesAsync(CurrentStaffId());
+            var devices = await _authService.GetTrustedDevicesAsync(CurrentStaffId(), deviceToken);
             return Ok(devices);
         }
 

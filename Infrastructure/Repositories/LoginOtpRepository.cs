@@ -14,5 +14,11 @@ namespace Infrastructure.Repositories
                 .Where(o => o.StaffId == staffId && o.ConsumedAt == null && o.ExpiresAt > DateTime.UtcNow)
                 .OrderByDescending(o => o.CreatedAt)
                 .FirstOrDefaultAsync();
+
+        public async Task<LoginOtp?> GetLatestForStaffAsync(int staffId) =>
+            await _db.LoginOtps
+                .Where(o => o.StaffId == staffId)
+                .OrderByDescending(o => o.CreatedAt)
+                .FirstOrDefaultAsync();
     }
 }

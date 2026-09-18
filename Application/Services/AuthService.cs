@@ -24,7 +24,7 @@ namespace Application.Services
         private readonly JwtSettings _jwtSettings;
 
         public AuthService(IStaffRepository staffRepository, IRefreshTokenRepository refreshTokenRepository, IBackgroundTaskQueue backgroundTaskQueue,
-            ITrustedDeviceRepository trustedDeviceRepository,ILoginOtpRepository loginOtpRepository, IOptions<JwtSettings> jwtSettings)
+            ITrustedDeviceRepository trustedDeviceRepository, ILoginOtpRepository loginOtpRepository, IOptions<JwtSettings> jwtSettings)
         {
             _staffRepository = staffRepository;
             _refreshTokenRepository = refreshTokenRepository;
@@ -75,40 +75,71 @@ namespace Application.Services
                 }
             }
 
-            var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
-
-            var otp = new LoginOtp
-            {
-                StaffId = staff.Id,
-                CodeHash = HashToken(code),
-                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.OtpExpiryMinutes)
-            };
-
-            await _loginOtpRepository.CreateAsync(otp);
-
-            // send email in background so it doesn't block the login request
-            var email = staff.Email;
-            var name = staff.Name;
-            var otpExpiryMinutes = _jwtSettings.OtpExpiryMinutes;
-
-            _backgroundTaskQueue.Enqueue(async (services, cancellationToken) =>
-            {
-                var emailService = services.GetRequiredService<IEmailService>();
-
-                await emailService.SendOtpAsync(
-                    email,
-                    name,
-                    code,
-                    otpExpiryMinutes);
-            });
-
             var pendingToken = GeneratePendingToken(staff.Id);
+
+            await IssueOtpAsync(staff);
 
             return new LoginResultDto
             {
                 RequiresOtp = true,
                 PendingToken = pendingToken
             };
+        }
+
+        public async Task<ResendOtpResultDto> ResendOtpAsync(string pendingToken)
+        {
+            var staffId = ReadPendingToken(pendingToken);
+            var staff = await _staffRepository.GetByIdAsync(staffId)
+                ?? throw new UnauthorizedAccessException("Login session expired. Please log in again.");
+
+            var lastOtp = await _loginOtpRepository.GetLatestForStaffAsync(staffId);
+
+            if (lastOtp is not null)
+            {
+                var secondsSinceLast = (DateTime.UtcNow - lastOtp.CreatedAt).TotalSeconds;
+                var remaining = _jwtSettings.OtpResendCooldownSeconds - secondsSinceLast;
+
+                if (remaining > 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Please wait {Math.Ceiling(remaining)} seconds before requesting another code.");
+                }
+            }
+
+            await IssueOtpAsync(staff);
+
+            return new ResendOtpResultDto
+            {
+                CooldownSeconds = _jwtSettings.OtpResendCooldownSeconds
+            };
+        }
+
+        /// <summary>
+        /// Creates a fresh OTP row and queues the email. Dispatch is deliberately
+        /// backgrounded so login/resend return immediately rather than waiting on
+        /// Resend - the "resend code" button on the OTP screen is what covers the
+        /// case where a send fails or the email is slow to arrive.
+        /// </summary>
+        private async Task IssueOtpAsync(Staff staff)
+        {
+            var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+
+            await _loginOtpRepository.CreateAsync(new LoginOtp
+            {
+                StaffId = staff.Id,
+                CodeHash = HashToken(code),
+                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.OtpExpiryMinutes)
+            });
+
+            var email = staff.Email;
+            var name = staff.Name;
+            var expiryMinutes = _jwtSettings.OtpExpiryMinutes;
+
+            _backgroundTaskQueue.Enqueue(async (services, cancellationToken) =>
+            {
+                var emailService = services.GetRequiredService<IEmailService>();
+                await emailService.SendOtpAsync(email, name, code, expiryMinutes);
+            });
         }
 
         public async Task<VerifyOtpResultDto> VerifyOtpAsync(VerifyOtpRequestDto dto, string? ipAddress, string? userAgent)
@@ -215,17 +246,21 @@ namespace Application.Services
             await _staffRepository.UpdateAsync(staff);
         }
 
-        public async Task<IEnumerable<TrustedDeviceDto>> GetTrustedDevicesAsync(int staffId)
+        public async Task<IEnumerable<TrustedDeviceDto>> GetTrustedDevicesAsync(int staffId, string? currentDeviceToken)
         {
             var devices = await _trustedDeviceRepository.GetActiveForStaffAsync(staffId);
+
+            var currentHash = string.IsNullOrWhiteSpace(currentDeviceToken)
+                ? null
+                : HashToken(currentDeviceToken);
 
             return devices.Select(d => new TrustedDeviceDto
             {
                 Id = d.Id,
-                Label = d.Label,
+                Label = string.IsNullOrWhiteSpace(d.Label) ? "Unknown device" : d.Label,
+                IsCurrent = currentHash is not null && d.TokenHash == currentHash,
                 CreatedAt = d.CreatedAt,
-                LastUsedAt = d.LastUsedAt,
-                ExpiresAt = d.ExpiresAt
+                LastUsedAt = d.LastUsedAt
             });
         }
 
