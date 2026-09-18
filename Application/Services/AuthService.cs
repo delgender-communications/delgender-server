@@ -1,4 +1,5 @@
-﻿using Core.Configuration;
+﻿using Application.Utilities;
+using Core.Configuration;
 using Core.DTOs.Auth;
 using Core.Entities;
 using Core.Interfaces.Repositories;
@@ -110,7 +111,7 @@ namespace Application.Services
             };
         }
 
-        public async Task<VerifyOtpResultDto> VerifyOtpAsync(VerifyOtpRequestDto dto, string? ipAddress)
+        public async Task<VerifyOtpResultDto> VerifyOtpAsync(VerifyOtpRequestDto dto, string? ipAddress, string? userAgent)
         {
             var staffId = ReadPendingToken(dto.PendingToken);
             var staff = await _staffRepository.GetByIdAsync(staffId)
@@ -145,6 +146,7 @@ namespace Application.Services
                 {
                     StaffId = staff.Id,
                     TokenHash = HashToken(rawDeviceToken),
+                    Label = UserAgentParser.Describe(userAgent),
                     ExpiresAt = expiresAt
                 });
 

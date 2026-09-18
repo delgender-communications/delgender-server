@@ -32,7 +32,7 @@ namespace DelgenderCommunicationsAPI.Controllers
         [EnableRateLimiting("booking")]
         public async Task<ActionResult<VerifyOtpResultDto>> VerifyOtp([FromBody] VerifyOtpRequestDto dto)
         {
-            var result = await _authService.VerifyOtpAsync(dto, GetIp());
+            var result = await _authService.VerifyOtpAsync(dto, GetIp(), GetUserAgent());
             return Ok(result);
         }
 
@@ -81,5 +81,8 @@ namespace DelgenderCommunicationsAPI.Controllers
 
         private string? GetIp() =>
             HttpContext.Connection.RemoteIpAddress?.ToString();
+
+        private string? GetUserAgent() =>
+            Request.Headers.UserAgent.ToString();
     }
 }

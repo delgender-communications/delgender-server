@@ -5,7 +5,7 @@ namespace Core.Interfaces.Services
     public interface IAuthService
     {
         Task<LoginResultDto> LoginAsync(LoginRequestDto dto, string? ipAddress);
-        Task<VerifyOtpResultDto> VerifyOtpAsync(VerifyOtpRequestDto dto, string? ipAddress);
+        Task<VerifyOtpResultDto> VerifyOtpAsync(VerifyOtpRequestDto dto, string? ipAddress, string? userAgent);
         Task<AuthTokensDto> RefreshAsync(string refreshToken, string? ipAddress);
         Task LogoutAsync(string refreshToken);
         Task ChangePasswordAsync(int staffId, ChangePasswordDto dto);

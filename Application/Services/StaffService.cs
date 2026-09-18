@@ -62,7 +62,7 @@ namespace Application.Services
             return ToDto(staff);
         }
 
-        public async Task<PagedResultDto<StaffDto>> GetAllAsync(int page, int pageSize)
+        public async Task<PagedResultDto<StaffDto>> GetAllAsync(int page, int pageSize, bool includeSensitiveFields)
         {
             var all = (await _staffRepository.GetAllAsync())
                 .OrderBy(s => s.Name)
@@ -71,7 +71,7 @@ namespace Application.Services
             var pageItems = all
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(ToDto);
+                .Select(s => includeSensitiveFields ? ToDto(s) : ToDirectoryDto(s));
 
             return new PagedResultDto<StaffDto>
             {
@@ -175,6 +175,16 @@ namespace Application.Services
             ProfilePictureUrl = staff.ProfilePictureUrl,
             LastLoginAt = staff.LastLoginAt,
             CreatedAt = staff.CreatedAt
+        };
+
+        private static StaffDto ToDirectoryDto(Staff staff) => new()
+        {
+            Id = staff.Id,
+            StaffId = staff.StaffId,
+            Name = staff.Name,
+            Surname = staff.Surname,
+            JobTitle = staff.JobTitle,
+            ProfilePictureUrl = staff.ProfilePictureUrl
         };
     }
 }
