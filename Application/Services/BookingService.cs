@@ -5,7 +5,6 @@ using Core.Enums;
 using Core.Interfaces.Repositories;
 using Core.Interfaces.Services;
 using Microsoft.Extensions.DependencyInjection;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Application.Services
 {
