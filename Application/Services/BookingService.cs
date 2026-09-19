@@ -288,6 +288,8 @@ namespace Application.Services
         ? null
         : $"{booking.RespondedByStaff.Name} {booking.RespondedByStaff.Surname}",
 
+            RespondedByStaffProfilePictureUrl = booking.RespondedByStaff?.ProfilePictureUrl,
+
             RespondedAt = booking.RespondedAt,
             ResponseMessage = booking.ResponseMessage,
             DeclineReason = booking.DeclineReason
