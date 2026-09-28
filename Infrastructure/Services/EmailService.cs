@@ -205,7 +205,7 @@ namespace Infrastructure.Services
 
             var email = new EmailMessage
             {
-                From = "Delgender Communications <hello@delgendercommunications.site>",
+                From = "Delgender Communications <noreply@delgendercommunications.co.za>",
                 To = customer.Email,
                 Subject = "We'd love your feedback",
                 HtmlBody = _renderer.Render("Layout.html", tokens),
