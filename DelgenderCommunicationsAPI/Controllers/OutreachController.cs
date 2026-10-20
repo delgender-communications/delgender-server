@@ -1,0 +1,91 @@
+﻿using Core.DTOs;
+using Core.DTOs.Outreach;
+using Core.Enums;
+using Core.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+namespace DelgenderCommunicationsAPI.Controllers
+{
+    [ApiController]
+    [Route("api/v1/outreach")]
+    [Authorize]
+    public class OutreachController : Controller
+    {
+        private readonly IOutreachService _outreachService;
+
+        public OutreachController(IOutreachService outreachService)
+        {
+            _outreachService = outreachService;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<PagedResultDto<OutreachListItemDto>>> GetAll(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 15,
+            [FromQuery] OutreachStatus? status = null)
+        {
+            var result = await _outreachService.GetAllAsync(page, pageSize, status);
+            return Ok(result);
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<OutreachDetailDto>> GetById(int id)
+        {
+            var company = await _outreachService.GetByIdAsync(id);
+            return company is null ? NotFound() : Ok(company);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<OutreachDetailDto>> Create([FromBody] CreateOutreachDto dto)
+        {
+            var company = await _outreachService.CreateAsync(dto, CurrentStaffId());
+            return Ok(company);
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<OutreachDetailDto>> Update(int id, [FromBody] UpdateOutreachDto dto)
+        {
+            var company = await _outreachService.UpdateAsync(id, dto, CurrentStaffId());
+            return company is null ? NotFound() : Ok(company);
+        }
+
+        [HttpPatch("{id:int}/notes")]
+        public async Task<ActionResult<OutreachDetailDto>> UpdateNotes(int id, [FromBody] UpdateOutreachNotesDto dto)
+        {
+            var company = await _outreachService.UpdateNotesAsync(id, dto);
+            return company is null ? NotFound() : Ok(company);
+        }
+
+        [HttpPost("{id:int}/pitch-deck")]
+        [RequestSizeLimit(20_000_000)]
+        public async Task<ActionResult<OutreachDetailDto>> UploadPitchDeck(int id, IFormFile file)
+        {
+            if (file is null || file.Length == 0)
+            {
+                return BadRequest(new { message = "No pitch deck was uploaded." });
+            }
+
+            if (file.Length > 20_000_000)
+            {
+                return BadRequest(new { message = "That PDF is over 20 MB." });
+            }
+
+            var isPdf = string.Equals(file.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase)
+                || file.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+
+            if (!isPdf)
+            {
+                return BadRequest(new { message = "The pitch deck needs to be a PDF." });
+            }
+
+            await using var stream = file.OpenReadStream();
+            var company = await _outreachService.UploadPitchDeckAsync(id, stream, file.FileName, CurrentStaffId());
+            return company is null ? NotFound() : Ok(company);
+        }
+
+        private int CurrentStaffId() =>
+            int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    }
+}
