@@ -48,6 +48,42 @@ namespace Application.Services
             return (result.SecureUrl.ToString(), result.PublicId);
         }
 
+        public async Task<(string Url, string PublicId)> UploadRawAsync(Stream fileStream, string fileName, string folder)
+        {
+            var uploadParams = new RawUploadParams
+            {
+                File = new FileDescription(fileName, fileStream),
+                Folder = folder,
+                UseFilename = true,
+                UniqueFilename = true,
+                Overwrite = false
+            };
+
+            var result = await _cloudinary.UploadAsync(uploadParams);
+
+            if (result.Error is not null)
+            {
+                throw new InvalidOperationException($"File upload failed: {result.Error.Message}");
+            }
+
+            return (result.SecureUrl.ToString(), result.PublicId);
+        }
+
+        public async Task DeleteRawAsync(string publicId)
+        {
+            try
+            {
+                await _cloudinary.DestroyAsync(new DeletionParams(publicId)
+                {
+                    ResourceType = ResourceType.Raw
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Cloudinary] Failed to delete {publicId}: {ex.Message}");
+            }
+        }
+
         public async Task DeleteImageAsync(string publicId)
         {
             try

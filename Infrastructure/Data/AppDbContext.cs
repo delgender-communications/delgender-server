@@ -18,6 +18,8 @@ namespace Infrastructure.Data
         public DbSet<TrustedDevice> TrustedDevices => Set<TrustedDevice>();
         public DbSet<LoginOtp> LoginOtps => Set<LoginOtp>();
         public DbSet<Feedback> Feedbacks => Set<Feedback>();
+        public DbSet<OutreachCompany> OutreachCompanies => Set<OutreachCompany>();
+        public DbSet<OutreachLog> OutreachLogs => Set<OutreachLog>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -141,6 +143,30 @@ namespace Infrastructure.Data
 
             modelBuilder.Entity<Customer>()
                 .HasIndex(c => c.Email);
+
+            modelBuilder.Entity<OutreachCompany>()
+                .HasOne(o => o.AddedByStaff)
+                .WithMany()
+                .HasForeignKey(o => o.AddedByStaffId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OutreachCompany>()
+                .HasIndex(o => o.Status);
+
+            modelBuilder.Entity<OutreachLog>()
+                .HasOne(l => l.OutreachCompany)
+                .WithMany(o => o.Logs)
+                .HasForeignKey(l => l.OutreachCompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OutreachLog>()
+                .HasOne(l => l.Staff)
+                .WithMany()
+                .HasForeignKey(l => l.StaffId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<OutreachLog>()
+                .HasIndex(l => l.CreatedAt);
         }
     }
 }

@@ -388,6 +388,99 @@ namespace Infrastructure.Migrations
                     b.ToTable("LoginOtps");
                 });
 
+            modelBuilder.Entity("Core.Entities.OutreachCompany", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AddedByStaffId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContactName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PitchDeckFileName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PitchDeckPublicId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PitchDeckUploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PitchDeckUrl")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AddedByStaffId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("OutreachCompanies");
+                });
+
+            modelBuilder.Entity("Core.Entities.OutreachLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActorName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("OutreachCompanyId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("StaffId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("OutreachCompanyId");
+
+                    b.HasIndex("StaffId");
+
+                    b.ToTable("OutreachLogs");
+                });
+
             modelBuilder.Entity("Core.Entities.PageView", b =>
                 {
                     b.Property<int>("Id")
@@ -679,6 +772,35 @@ namespace Infrastructure.Migrations
                     b.Navigation("Staff");
                 });
 
+            modelBuilder.Entity("Core.Entities.OutreachCompany", b =>
+                {
+                    b.HasOne("Core.Entities.Staff", "AddedByStaff")
+                        .WithMany()
+                        .HasForeignKey("AddedByStaffId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AddedByStaff");
+                });
+
+            modelBuilder.Entity("Core.Entities.OutreachLog", b =>
+                {
+                    b.HasOne("Core.Entities.OutreachCompany", "OutreachCompany")
+                        .WithMany("Logs")
+                        .HasForeignKey("OutreachCompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Staff", "Staff")
+                        .WithMany()
+                        .HasForeignKey("StaffId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("OutreachCompany");
+
+                    b.Navigation("Staff");
+                });
+
             modelBuilder.Entity("Core.Entities.RefreshToken", b =>
                 {
                     b.HasOne("Core.Entities.Staff", "Staff")
@@ -721,6 +843,11 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Entities.Invoice", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Core.Entities.OutreachCompany", b =>
+                {
+                    b.Navigation("Logs");
                 });
 
             modelBuilder.Entity("Core.Entities.Staff", b =>
