@@ -20,6 +20,8 @@ namespace Infrastructure.Data
         public DbSet<Feedback> Feedbacks => Set<Feedback>();
         public DbSet<OutreachCompany> OutreachCompanies => Set<OutreachCompany>();
         public DbSet<OutreachLog> OutreachLogs => Set<OutreachLog>();
+        public DbSet<ResearchLead> ResearchLeads => Set<ResearchLead>();
+        public DbSet<ResearchLeadEvidence> ResearchLeadEvidenceItems => Set<ResearchLeadEvidence>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -167,6 +169,39 @@ namespace Infrastructure.Data
 
             modelBuilder.Entity<OutreachLog>()
                 .HasIndex(l => l.CreatedAt);
+
+            modelBuilder.Entity<ResearchLead>()
+                .HasIndex(l => l.Status);
+
+            modelBuilder.Entity<ResearchLead>()
+                .HasIndex(l => l.NameKey);
+
+            modelBuilder.Entity<ResearchLead>()
+                .HasIndex(l => l.WebsiteHost);
+
+            modelBuilder.Entity<ResearchLead>()
+                .HasOne(l => l.AddedByStaff)
+                .WithMany()
+                .HasForeignKey(l => l.AddedByStaffId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ResearchLead>()
+                .HasOne(l => l.ReviewedByStaff)
+                .WithMany()
+                .HasForeignKey(l => l.ReviewedByStaffId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ResearchLead>()
+                .HasOne(l => l.OutreachCompany)
+                .WithMany()
+                .HasForeignKey(l => l.OutreachCompanyId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ResearchLeadEvidence>()
+                .HasOne(e => e.ResearchLead)
+                .WithMany(l => l.Evidence)
+                .HasForeignKey(e => e.ResearchLeadId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

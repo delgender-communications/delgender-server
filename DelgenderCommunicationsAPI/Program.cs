@@ -37,6 +37,7 @@ try
     builder.Services.AddScoped<IPageViewRepository, PageViewRepository>();
     builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
     builder.Services.AddScoped<IOutreachRepository, OutreachRepository>();
+    builder.Services.AddScoped<IResearchLeadRepository, ResearchLeadRepository>();
 
     // Services
     builder.Services.AddOptions();
@@ -86,6 +87,8 @@ try
     builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
     builder.Services.AddScoped<IClientService, ClientService>();
     builder.Services.AddScoped<IOutreachService, OutreachService>();
+    builder.Services.AddScoped<IResearchLeadService, ResearchLeadService>();
+    builder.Services.AddScoped<AgentApiKeyFilter>();
 
     builder.Services.AddScoped<IInvoicePdfService, InvoicePdfService>();
     QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
