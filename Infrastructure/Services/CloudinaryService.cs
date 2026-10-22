@@ -84,6 +84,18 @@ namespace Application.Services
             }
         }
 
+        public string GetRawDownloadUrl(string publicId)
+        {
+            var expiresAt = DateTimeOffset.UtcNow.AddMinutes(10).ToUnixTimeSeconds();
+
+            return _cloudinary.DownloadPrivate(
+                publicId,
+                attachment: false,
+                type: "upload",
+                expiresAt: expiresAt,
+                resourceType: "raw");
+        }
+
         public async Task DeleteImageAsync(string publicId)
         {
             try

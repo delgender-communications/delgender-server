@@ -12,5 +12,8 @@ namespace Core.Interfaces.Services
         Task<OutreachDetailDto?> UpdateAsync(int id, UpdateOutreachDto dto, int staffId);
         Task<OutreachDetailDto?> UpdateNotesAsync(int id, UpdateOutreachNotesDto dto);
         Task<OutreachDetailDto?> UploadPitchDeckAsync(int id, Stream fileStream, string fileName, int staffId);
+        Task<(byte[] Bytes, string FileName)?> DownloadPitchDeckAsync(int id);
+        Task<OutreachDetailDto?> SendEmailAsync(int id, int staffId);
+        Task<OutreachDetailDto?> MarkEmailedAsync(int id, int staffId);
     }
 }

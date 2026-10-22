@@ -4,6 +4,7 @@
     {
         Researching,
         Ready,
-        Emailed
+        Emailed,
+        Cancelled
     }
 }

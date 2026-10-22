@@ -4,6 +4,7 @@ using Core.Entities;
 using Core.Enums;
 using Core.Interfaces.Repositories;
 using Core.Interfaces.Services;
+using System.Collections.Concurrent;
 
 namespace Application.Services
 {
@@ -12,15 +13,25 @@ namespace Application.Services
         private readonly IOutreachRepository _outreachRepository;
         private readonly IStaffRepository _staffRepository;
         private readonly ICloudinaryService _cloudinaryService;
+        private readonly IPitchDeckFetcher _pitchDeckFetcher;
+        private readonly IOutreachMailer _outreachMailer;
+
+        // Companies whose email is being sent right now. Stops a double click (or two
+        // teammates clicking at once) from emailing the same company twice.
+        private static readonly ConcurrentDictionary<int, byte> SendsInProgress = new();
 
         public OutreachService(
             IOutreachRepository outreachRepository,
             IStaffRepository staffRepository,
-            ICloudinaryService cloudinaryService)
+            ICloudinaryService cloudinaryService,
+            IPitchDeckFetcher pitchDeckFetcher,
+            IOutreachMailer outreachMailer)
         {
             _outreachRepository = outreachRepository;
             _staffRepository = staffRepository;
             _cloudinaryService = cloudinaryService;
+            _pitchDeckFetcher = pitchDeckFetcher;
+            _outreachMailer = outreachMailer;
         }
 
         public async Task<PagedResultDto<OutreachListItemDto>> GetAllAsync(int page, int pageSize, OutreachStatus? status)
@@ -180,6 +191,158 @@ namespace Application.Services
             return ToDetail(company);
         }
 
+        public async Task<(byte[] Bytes, string FileName)?> DownloadPitchDeckAsync(int id)
+        {
+            var company = await _outreachRepository.GetByIdWithDetailsAsync(id);
+            if (company is null)
+            {
+                return null;
+            }
+
+            if (string.IsNullOrWhiteSpace(company.PitchDeckUrl))
+            {
+                throw new KeyNotFoundException("This company doesn't have a pitch deck yet.");
+            }
+
+            var bytes = await _pitchDeckFetcher.FetchAsync(DeckSourceUrl(company));
+            return (bytes, DeckFileName(company));
+        }
+
+        /// <summary>
+        /// The "email it for me" pipeline:
+        ///   1. lock the company so it can't be sent twice at once
+        ///   2. check it is Ready and has an email address and a pitch deck
+        ///   3. download the pitch deck
+        ///   4. send the email (text lives in OutreachEmailContent)
+        ///   5. mark the company Emailed and write it to the activity log
+        /// The status only changes after the email has actually gone out, so a failed
+        /// send leaves the company Ready and nothing is logged.
+        /// </summary>
+        public async Task<OutreachDetailDto?> SendEmailAsync(int id, int staffId)
+        {
+            if (!SendsInProgress.TryAdd(id, 0))
+            {
+                throw new InvalidOperationException("This email is already being sent. Give it a moment.");
+            }
+
+            try
+            {
+                var company = await _outreachRepository.GetByIdWithDetailsAsync(id);
+                if (company is null)
+                {
+                    return null;
+                }
+
+                var staff = await RequireStaffAsync(staffId);
+
+                RequireReady(company);
+
+                if (string.IsNullOrWhiteSpace(company.Email))
+                {
+                    throw new InvalidOperationException("Add an email address for this company before sending.");
+                }
+
+                if (string.IsNullOrWhiteSpace(company.PitchDeckUrl))
+                {
+                    throw new InvalidOperationException("Upload the pitch deck before sending.");
+                }
+
+                var deck = await _pitchDeckFetcher.FetchAsync(DeckSourceUrl(company));
+
+                await _outreachMailer.SendPitchAsync(new OutreachPitchEmail(
+                    RecipientEmail: company.Email,
+                    RecipientName: company.ContactName,
+                    CompanyName: company.CompanyName,
+                    SenderName: $"{staff.Name} {staff.Surname}".Trim(),
+                    PitchDeckBytes: deck,
+                    PitchDeckFileName: DeckFileName(company)));
+
+                var now = DateTime.UtcNow;
+                company.Status = OutreachStatus.Emailed;
+                company.UpdatedAt = now;
+                company.Logs.Add(NewLog(
+                    staff,
+                    $"emailed the pitch deck to {company.Email} through the system. Everything is done.",
+                    now));
+
+                try
+                {
+                    await _outreachRepository.SaveChangesAsync();
+                }
+                catch
+                {
+                    // The email is already out, so don't let anyone retry blindly.
+                    throw new InvalidOperationException(
+                        "The email was sent, but we couldn't update the status. Please mark it as Emailed yourself so nobody sends it twice.");
+                }
+
+                return ToDetail(company);
+            }
+            finally
+            {
+                SendsInProgress.TryRemove(id, out _);
+            }
+        }
+
+        public async Task<OutreachDetailDto?> MarkEmailedAsync(int id, int staffId)
+        {
+            var company = await _outreachRepository.GetByIdWithDetailsAsync(id);
+            if (company is null)
+            {
+                return null;
+            }
+
+            var staff = await RequireStaffAsync(staffId);
+
+            RequireReady(company);
+
+            var now = DateTime.UtcNow;
+            company.Status = OutreachStatus.Emailed;
+            company.UpdatedAt = now;
+            company.Logs.Add(NewLog(
+                staff,
+                "marked this as Emailed. They sent the email themselves, outside the system. Everything is done.",
+                now));
+
+            await _outreachRepository.SaveChangesAsync();
+            return ToDetail(company);
+        }
+
+        // Prefer a signed link so Cloudinary's "block PDF delivery" setting can't get
+        // in the way. Falls back to the stored URL for decks without a public id.
+        private string DeckSourceUrl(OutreachCompany company) =>
+            string.IsNullOrWhiteSpace(company.PitchDeckPublicId)
+                ? company.PitchDeckUrl!
+                : _cloudinaryService.GetRawDownloadUrl(company.PitchDeckPublicId);
+
+        private static void RequireReady(OutreachCompany company)
+        {
+            if (company.Status == OutreachStatus.Ready)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(company.Status switch
+            {
+                OutreachStatus.Emailed => "This company has already been marked as Emailed.",
+                OutreachStatus.Cancelled => "This company was cancelled, so it can't be emailed.",
+                _ => "Only companies marked Ready can be emailed."
+            });
+        }
+
+        private static string DeckFileName(OutreachCompany company)
+        {
+            var name = Path.GetFileName(company.PitchDeckFileName ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(name))
+            {
+                var invalid = Path.GetInvalidFileNameChars();
+                var safeCompany = new string(company.CompanyName.Where(c => !invalid.Contains(c)).ToArray()).Trim();
+                name = $"{(safeCompany.Length == 0 ? "Pitch deck" : safeCompany)} pitch deck";
+            }
+
+            return name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? name : $"{name}.pdf";
+        }
+
         private async Task<Staff> RequireStaffAsync(int staffId)
         {
             var staff = await _staffRepository.GetByIdAsync(staffId);
@@ -229,6 +392,7 @@ namespace Application.Services
         {
             OutreachStatus.Ready => "added this company as Ready. The pitch can be downloaded and emailed.",
             OutreachStatus.Emailed => "added this company as Emailed. This outreach is already done.",
+            OutreachStatus.Cancelled => "added this company as Cancelled. We are not pursuing it.",
             _ => "added this company. It is still being researched."
         };
 
@@ -244,6 +408,11 @@ namespace Application.Services
                 return $"changed the status from {Label(from)} to Emailed. Everything is done.";
             }
 
+            if (to == OutreachStatus.Cancelled)
+            {
+                return $"changed the status from {Label(from)} to Cancelled. We decided not to pursue this company.";
+            }
+
             return $"changed the status from {Label(from)} to Researching. The company is still being researched.";
         }
 
@@ -251,6 +420,7 @@ namespace Application.Services
         {
             OutreachStatus.Ready => "Ready",
             OutreachStatus.Emailed => "Emailed",
+            OutreachStatus.Cancelled => "Cancelled",
             _ => "Researching"
         };
 
