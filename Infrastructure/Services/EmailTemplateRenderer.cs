@@ -82,6 +82,5 @@ namespace Infrastructure.Services
             // the FileNotFoundException above points somewhere sensible.
             return candidates[0];
         }
-
     }
 }

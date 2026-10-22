@@ -1,8 +1,4 @@
-﻿using System;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-using Core.Interfaces.Services;
+﻿using Core.Interfaces.Services;
 using System.Net;
 
 namespace Infrastructure.Services
