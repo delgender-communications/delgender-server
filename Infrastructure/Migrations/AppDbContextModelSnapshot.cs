@@ -564,6 +564,115 @@ namespace Infrastructure.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
+            modelBuilder.Entity("Core.Entities.ResearchLead", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AddedByStaffId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Case")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DismissReason")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Industry")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Location")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NameKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("OutreachCompanyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ReviewedByStaffId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RunId")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("Score")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Website")
+                        .HasColumnType("text");
+
+                    b.Property<string>("WebsiteHost")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AddedByStaffId");
+
+                    b.HasIndex("NameKey");
+
+                    b.HasIndex("OutreachCompanyId");
+
+                    b.HasIndex("ReviewedByStaffId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("WebsiteHost");
+
+                    b.ToTable("ResearchLeads");
+                });
+
+            modelBuilder.Entity("Core.Entities.ResearchLeadEvidence", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Finding")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ResearchLeadId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SourceUrl")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResearchLeadId");
+
+                    b.ToTable("ResearchLeadEvidenceItems");
+                });
+
             modelBuilder.Entity("Core.Entities.Staff", b =>
                 {
                     b.Property<int>("Id")
@@ -812,6 +921,41 @@ namespace Infrastructure.Migrations
                     b.Navigation("Staff");
                 });
 
+            modelBuilder.Entity("Core.Entities.ResearchLead", b =>
+                {
+                    b.HasOne("Core.Entities.Staff", "AddedByStaff")
+                        .WithMany()
+                        .HasForeignKey("AddedByStaffId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Core.Entities.OutreachCompany", "OutreachCompany")
+                        .WithMany()
+                        .HasForeignKey("OutreachCompanyId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Core.Entities.Staff", "ReviewedByStaff")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByStaffId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AddedByStaff");
+
+                    b.Navigation("OutreachCompany");
+
+                    b.Navigation("ReviewedByStaff");
+                });
+
+            modelBuilder.Entity("Core.Entities.ResearchLeadEvidence", b =>
+                {
+                    b.HasOne("Core.Entities.ResearchLead", "ResearchLead")
+                        .WithMany("Evidence")
+                        .HasForeignKey("ResearchLeadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ResearchLead");
+                });
+
             modelBuilder.Entity("Core.Entities.TrustedDevice", b =>
                 {
                     b.HasOne("Core.Entities.Staff", "Staff")
@@ -848,6 +992,11 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Entities.OutreachCompany", b =>
                 {
                     b.Navigation("Logs");
+                });
+
+            modelBuilder.Entity("Core.Entities.ResearchLead", b =>
+                {
+                    b.Navigation("Evidence");
                 });
 
             modelBuilder.Entity("Core.Entities.Staff", b =>
