@@ -85,6 +85,29 @@ namespace DelgenderCommunicationsAPI.Controllers
             return company is null ? NotFound() : Ok(company);
         }
 
+        [HttpGet("{id:int}/pitch-deck")]
+        public async Task<IActionResult> DownloadPitchDeck(int id)
+        {
+            var deck = await _outreachService.DownloadPitchDeckAsync(id);
+            return deck is null
+                ? NotFound()
+                : File(deck.Value.Bytes, "application/pdf", deck.Value.FileName);
+        }
+
+        [HttpPost("{id:int}/send-email")]
+        public async Task<ActionResult<OutreachDetailDto>> SendEmail(int id)
+        {
+            var company = await _outreachService.SendEmailAsync(id, CurrentStaffId());
+            return company is null ? NotFound() : Ok(company);
+        }
+
+        [HttpPost("{id:int}/mark-emailed")]
+        public async Task<ActionResult<OutreachDetailDto>> MarkEmailed(int id)
+        {
+            var company = await _outreachService.MarkEmailedAsync(id, CurrentStaffId());
+            return company is null ? NotFound() : Ok(company);
+        }
+
         private int CurrentStaffId() =>
             int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }

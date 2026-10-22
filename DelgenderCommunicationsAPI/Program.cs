@@ -96,6 +96,9 @@ try
     builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
     builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
+    builder.Services.AddSingleton<IPitchDeckFetcher, PitchDeckFetcher>();
+    builder.Services.AddScoped<IOutreachMailer, OutreachMailer>();
+
     // Rate Limiting
     builder.Services.AddRateLimiter(options =>
     {
