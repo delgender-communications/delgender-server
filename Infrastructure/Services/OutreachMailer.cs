@@ -2,6 +2,7 @@
 using Core.Interfaces.Services;
 using Resend;
 using System.Net;
+using System.Text.RegularExpressions;
 
 namespace Infrastructure.Services
 {
@@ -35,7 +36,13 @@ namespace Infrastructure.Services
 
             var subject = Fill(OutreachEmailContent.Subject, values);
             var heading = Fill(OutreachEmailContent.Heading, values);
-            var text = Fill(OutreachEmailContent.Body, values).Replace("\r\n", "\n").Trim();
+            // Strip spaces at the end of each line, so a "blank" line that still holds
+            // a few spaces (easy to leave behind in an editor) is treated as blank and
+            // still starts a new paragraph.
+            var text = Regex.Replace(
+                Fill(OutreachEmailContent.Body, values).Replace("\r\n", "\n"),
+                @"[ \t]+\n",
+                "\n").Trim();
 
             var layoutTokens = new Dictionary<string, string?>
             {
