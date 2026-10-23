@@ -24,9 +24,9 @@
         // Optional. Where client replies should land. Leave empty to reply to FromEmail.
         public const string ReplyTo = "delgendercommunications@gmail.com";
 
-        public const string Subject = "Ideas to strengthen {{CompanyName}}'s brand";
+        public const string Subject = "A Proposal for {{CompanyName}}";
 
-        public const string Heading = "A proposal for {{CompanyName}}";
+        public const string Heading = "Ideas to Enhance {{CompanyName}}";
 
         public const string FooterNote =
             "You're receiving this because we prepared a proposal for your company. " +
