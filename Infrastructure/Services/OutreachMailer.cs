@@ -30,7 +30,7 @@ namespace Infrastructure.Services
             var values = new Dictionary<string, string>
             {
                 ["CompanyName"] = email.CompanyName,
-                ["ContactName"] = string.IsNullOrWhiteSpace(email.RecipientName) ? "there" : email.RecipientName.Trim(),
+                ["ContactName"] = string.IsNullOrWhiteSpace(email.RecipientName) ? $"{email.CompanyName.Trim()} team" : email.RecipientName.Trim(),
                 ["SenderName"] = email.SenderName
             };
 
