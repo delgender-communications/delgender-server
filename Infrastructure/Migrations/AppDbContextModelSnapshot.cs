@@ -544,12 +544,19 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("SessionVersion")
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<int>("StaffId")
                         .HasColumnType("integer");
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("TrustedDeviceId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -560,6 +567,8 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("TokenHash")
                         .IsUnique();
+
+                    b.HasIndex("TrustedDeviceId");
 
                     b.ToTable("RefreshTokens");
                 });
@@ -918,7 +927,14 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Core.Entities.TrustedDevice", "TrustedDevice")
+                        .WithMany()
+                        .HasForeignKey("TrustedDeviceId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Staff");
+
+                    b.Navigation("TrustedDevice");
                 });
 
             modelBuilder.Entity("Core.Entities.ResearchLead", b =>

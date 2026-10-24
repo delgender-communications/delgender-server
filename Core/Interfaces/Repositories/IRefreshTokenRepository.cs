@@ -5,5 +5,6 @@ namespace Core.Interfaces.Repositories
     public interface IRefreshTokenRepository : IRepository<RefreshToken>
     {
         Task<RefreshToken?> GetByTokenHashAsync(string tokenHash);
+        Task RevokeActiveForDeviceAsync(int deviceId);
     }
 }

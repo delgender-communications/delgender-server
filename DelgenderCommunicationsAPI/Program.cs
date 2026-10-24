@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Resend;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 
@@ -64,6 +65,40 @@ try
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30)
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var svn = context.Principal?.FindFirst(AuthSession.VersionClaim)?.Value;
+                if (svn != AuthSession.Version.ToString())
+                {
+                    context.Fail("Please sign in again.");
+                    return;
+                }
+
+                var did = context.Principal?.FindFirst(AuthSession.DeviceClaim)?.Value;
+                if (string.IsNullOrEmpty(did))
+                {
+                    return;
+                }
+
+                if (!int.TryParse(did, out var deviceId))
+                {
+                    context.Fail("Please sign in again.");
+                    return;
+                }
+
+                var devices = context.HttpContext.RequestServices
+                    .GetRequiredService<ITrustedDeviceRepository>();
+                var device = await devices.GetByIdAsync(deviceId);
+
+                if (device is null || device.RevokedAt is not null || device.ExpiresAt <= DateTime.UtcNow)
+                {
+                    context.Fail("This device was signed out. Please sign in again.");
+                }
+            }
         };
     });
 

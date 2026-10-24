@@ -78,11 +78,25 @@ namespace DelgenderCommunicationsAPI.Controllers
             return Ok(devices);
         }
 
+        [HttpPost("app-open")]
+        [Authorize]
+        public IActionResult AppOpen()
+        {
+            _authService.NotifyAppOpened();
+            return NoContent();
+        }
+
         [HttpDelete("trusted-devices/{id:int}")]
         [Authorize]
-        public async Task<IActionResult> RevokeTrustedDevice(int id)
+        public async Task<IActionResult> RevokeTrustedDevice(
+            int id,
+            [FromBody] RevokeTrustedDeviceRequestDto? dto)
         {
-            await _authService.RevokeTrustedDeviceAsync(CurrentStaffId(), id);
+            await _authService.RevokeTrustedDeviceAsync(
+                CurrentStaffId(),
+                id,
+                dto?.RefreshToken,
+                dto?.DeviceToken);
             return NoContent();
         }
 

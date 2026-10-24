@@ -105,6 +105,17 @@ namespace Infrastructure.Data
                 .HasIndex(r => r.TokenHash)
                 .IsUnique();
 
+            modelBuilder.Entity<RefreshToken>()
+                .Property(r => r.SessionVersion)
+                .HasDefaultValue(0)
+                .ValueGeneratedNever();
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasOne(r => r.TrustedDevice)
+                .WithMany()
+                .HasForeignKey(r => r.TrustedDeviceId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<TrustedDevice>()
                 .HasOne(t => t.Staff)
                 .WithMany(s => s.TrustedDevices)

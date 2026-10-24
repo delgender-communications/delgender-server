@@ -7,6 +7,10 @@
         public int StaffId { get; set; }
         public Staff Staff { get; set; } = null!;
 
+        public int? TrustedDeviceId { get; set; }
+        public TrustedDevice? TrustedDevice { get; set; }
+        public int SessionVersion { get; set; }
+
         public string TokenHash { get; set; } = null!;
         public bool RememberMe { get; set; }
 

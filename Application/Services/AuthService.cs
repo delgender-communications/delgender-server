@@ -62,9 +62,7 @@ namespace Application.Services
                     staff.LastLoginAt = DateTime.UtcNow;
                     await _staffRepository.UpdateAsync(staff);
 
-                    var directTokens = await GenerateTokensAsync(staff, dto.RememberMe, ipAddress);
-
-                    EnqueueOverdueInvoiceSweep();
+                    var directTokens = await GenerateTokensAsync(staff, dto.RememberMe, ipAddress, device.Id);
 
                     return new LoginResultDto
                     {
@@ -166,29 +164,36 @@ namespace Application.Services
             otp.ConsumedAt = DateTime.UtcNow;
             await _loginOtpRepository.UpdateAsync(otp);
 
-            var tokens = await GenerateTokensAsync(staff, dto.RememberMe, ipAddress);
+            int? trustedDeviceId = null;
+            string? rawDeviceToken = null;
+            DateTime? deviceExpiresAt = null;
 
             if (dto.TrustDevice)
             {
-                var rawDeviceToken = GenerateOpaqueToken();
-                var expiresAt = DateTime.UtcNow.AddDays(_jwtSettings.TrustedDeviceDays);
+                rawDeviceToken = GenerateOpaqueToken();
+                deviceExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.TrustedDeviceDays);
 
-                await _trustedDeviceRepository.CreateAsync(new TrustedDevice
+                var device = await _trustedDeviceRepository.CreateAsync(new TrustedDevice
                 {
                     StaffId = staff.Id,
                     TokenHash = HashToken(rawDeviceToken),
                     Label = UserAgentParser.Describe(userAgent),
-                    ExpiresAt = expiresAt
+                    ExpiresAt = deviceExpiresAt.Value
                 });
 
+                trustedDeviceId = device.Id;
+            }
+
+            var tokens = await GenerateTokensAsync(staff, dto.RememberMe, ipAddress, trustedDeviceId);
+
+            if (rawDeviceToken is not null)
+            {
                 tokens.DeviceToken = rawDeviceToken;
-                tokens.DeviceTokenExpiresAt = expiresAt;
+                tokens.DeviceTokenExpiresAt = deviceExpiresAt;
             }
 
             staff.LastLoginAt = DateTime.UtcNow;
             await _staffRepository.UpdateAsync(staff);
-
-            EnqueueOverdueInvoiceSweep();
 
             return new VerifyOtpResultDto
             {
@@ -207,9 +212,34 @@ namespace Application.Services
                 throw new UnauthorizedAccessException("Session expired. Please log in again.");
             }
 
-            existing.RevokedAt = DateTime.UtcNow;
+            if (existing.SessionVersion != AuthSession.Version)
+            {
+                existing.RevokedAt = DateTime.UtcNow;
+                existing.UpdatedAt = DateTime.UtcNow;
+                await _refreshTokenRepository.UpdateAsync(existing);
+                throw new UnauthorizedAccessException("Session expired. Please log in again.");
+            }
 
-            var newTokens = await GenerateTokensAsync(existing.Staff, existing.RememberMe, ipAddress);
+            if (existing.TrustedDeviceId is int deviceId)
+            {
+                var device = await _trustedDeviceRepository.GetByIdAsync(deviceId);
+                if (device is null || device.RevokedAt is not null || device.ExpiresAt <= DateTime.UtcNow)
+                {
+                    existing.RevokedAt = DateTime.UtcNow;
+                    existing.UpdatedAt = DateTime.UtcNow;
+                    await _refreshTokenRepository.UpdateAsync(existing);
+                    throw new UnauthorizedAccessException("This device was signed out. Please log in again.");
+                }
+
+                device.LastUsedAt = DateTime.UtcNow;
+                device.UpdatedAt = DateTime.UtcNow;
+                await _trustedDeviceRepository.UpdateAsync(device);
+            }
+
+            existing.RevokedAt = DateTime.UtcNow;
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            var newTokens = await GenerateTokensAsync(existing.Staff, existing.RememberMe, ipAddress, existing.TrustedDeviceId);
 
             existing.ReplacedByTokenHash = HashToken(newTokens.RefreshToken);
             await _refreshTokenRepository.UpdateAsync(existing);
@@ -264,7 +294,7 @@ namespace Application.Services
             });
         }
 
-        public async Task RevokeTrustedDeviceAsync(int staffId, int deviceId)
+        public async Task RevokeTrustedDeviceAsync(int staffId, int deviceId, string? refreshToken, string? deviceToken)
         {
             var device = await _trustedDeviceRepository.GetByIdAsync(deviceId);
 
@@ -273,11 +303,25 @@ namespace Application.Services
                 throw new KeyNotFoundException("Trusted device not found.");
             }
 
-            device.RevokedAt = DateTime.UtcNow;
-            await _trustedDeviceRepository.UpdateAsync(device);
+            if (device.RevokedAt is null)
+            {
+                device.RevokedAt = DateTime.UtcNow;
+                device.UpdatedAt = DateTime.UtcNow;
+                await _trustedDeviceRepository.UpdateAsync(device);
+            }
+
+            await _refreshTokenRepository.RevokeActiveForDeviceAsync(deviceId);
+
+            var isCurrent = !string.IsNullOrWhiteSpace(deviceToken)
+                && HashToken(deviceToken) == device.TokenHash;
+
+            if (isCurrent && !string.IsNullOrWhiteSpace(refreshToken))
+            {
+                await LogoutAsync(refreshToken);
+            }
         }
 
-        private void EnqueueOverdueInvoiceSweep()
+        public void NotifyAppOpened()
         {
             _backgroundTaskQueue.Enqueue(async (services, cancellationToken) =>
             {
@@ -286,9 +330,9 @@ namespace Application.Services
             });
         }
 
-        private async Task<AuthTokensDto> GenerateTokensAsync(Staff staff, bool rememberMe, string? ipAddress)
+        private async Task<AuthTokensDto> GenerateTokensAsync(Staff staff, bool rememberMe, string? ipAddress, int? trustedDeviceId)
         {
-            var accessToken = GenerateAccessToken(staff);
+            var accessToken = GenerateAccessToken(staff, trustedDeviceId);
             var accessExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenMinutes);
 
             var refreshRaw = GenerateOpaqueToken();
@@ -301,7 +345,9 @@ namespace Application.Services
                 TokenHash = HashToken(refreshRaw),
                 RememberMe = rememberMe,
                 CreatedByIp = ipAddress,
-                ExpiresAt = refreshExpiresAt
+                ExpiresAt = refreshExpiresAt,
+                TrustedDeviceId = trustedDeviceId,
+                SessionVersion = AuthSession.Version
             });
 
             return new AuthTokensDto
@@ -313,7 +359,7 @@ namespace Application.Services
             };
         }
 
-        private string GenerateAccessToken(Staff staff)
+        private string GenerateAccessToken(Staff staff, int? trustedDeviceId)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -325,8 +371,14 @@ namespace Application.Services
                 new(ClaimTypes.Email, staff.Email),
                 new(ClaimTypes.Name, $"{staff.Name} {staff.Surname}"),
                 new(ClaimTypes.Role, staff.Role.ToString()),
-                new("staffCode", staff.StaffId)
+                new("staffCode", staff.StaffId),
+                new(AuthSession.VersionClaim, AuthSession.Version.ToString())
             };
+
+            if (trustedDeviceId is int deviceId)
+            {
+                claims.Add(new Claim(AuthSession.DeviceClaim, deviceId.ToString()));
+            }
 
             var token = new JwtSecurityToken(
                 issuer: _jwtSettings.Issuer,

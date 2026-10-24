@@ -11,6 +11,7 @@ namespace Core.Interfaces.Services
         Task LogoutAsync(string refreshToken);
         Task ChangePasswordAsync(int staffId, ChangePasswordDto dto);
         Task<IEnumerable<TrustedDeviceDto>> GetTrustedDevicesAsync(int staffId, string? currentDeviceToken);
-        Task RevokeTrustedDeviceAsync(int staffId, int deviceId);
+        Task RevokeTrustedDeviceAsync(int staffId, int deviceId, string? refreshToken, string? deviceToken);
+        void NotifyAppOpened();
     }
 }
