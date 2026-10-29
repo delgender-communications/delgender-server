@@ -20,6 +20,7 @@ namespace Infrastructure.Data
         public DbSet<Feedback> Feedbacks => Set<Feedback>();
         public DbSet<OutreachCompany> OutreachCompanies => Set<OutreachCompany>();
         public DbSet<OutreachLog> OutreachLogs => Set<OutreachLog>();
+        public DbSet<TeamDocument> TeamDocuments => Set<TeamDocument>();
         public DbSet<ResearchLead> ResearchLeads => Set<ResearchLead>();
         public DbSet<ResearchLeadEvidence> ResearchLeadEvidenceItems => Set<ResearchLeadEvidence>();
 
@@ -180,6 +181,12 @@ namespace Infrastructure.Data
 
             modelBuilder.Entity<OutreachLog>()
                 .HasIndex(l => l.CreatedAt);
+
+            modelBuilder.Entity<TeamDocument>()
+                .HasOne(d => d.UploadedByStaff)
+                .WithMany()
+                .HasForeignKey(d => d.UploadedByStaffId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<ResearchLead>()
                 .HasIndex(l => l.Status);
