@@ -16,6 +16,10 @@ namespace Core.DTOs.Outreach
         public string? PitchDeckUrl { get; set; }
         public DateTime? PitchDeckUploadedAt { get; set; }
 
+        public string? ReportFileName { get; set; }
+        public string? ReportUrl { get; set; }
+        public DateTime? ReportUploadedAt { get; set; }
+
         public int AddedByStaffId { get; set; }
         public string AddedByName { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }

@@ -22,19 +22,19 @@ namespace Infrastructure.Services
                 if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
                 {
                     throw new InvalidOperationException(
-                        "The file host refused to hand over this pitch deck. If you use Cloudinary, check that PDF delivery is allowed for the account, then try again.");
+                        "The file host refused to hand over this file. If you use Cloudinary, check that PDF delivery is allowed for the account, then try again.");
                 }
 
                 throw new InvalidOperationException(
-                    $"Couldn't fetch the pitch deck (the file host answered {(int)response.StatusCode}). Try uploading it again.");
+                    $"Couldn't fetch the file (the file host answered {(int)response.StatusCode}). Try uploading it again.");
             }
             catch (HttpRequestException)
             {
-                throw new InvalidOperationException("Couldn't reach the file host to get the pitch deck. Try again in a moment.");
+                throw new InvalidOperationException("Couldn't reach the file host to get the file. Try again in a moment.");
             }
             catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                throw new InvalidOperationException("Getting the pitch deck took too long. Try again in a moment.");
+                throw new InvalidOperationException("Getting the file took too long. Try again in a moment.");
             }
         }
     }

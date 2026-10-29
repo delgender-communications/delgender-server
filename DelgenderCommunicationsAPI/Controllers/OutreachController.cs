@@ -13,6 +13,13 @@ namespace DelgenderCommunicationsAPI.Controllers
     [Authorize]
     public class OutreachController : Controller
     {
+        private static readonly Dictionary<string, string> ReportContentTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            [".pdf"] = "application/pdf",
+            [".docx"] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            [".txt"] = "text/plain"
+        };
+
         private readonly IOutreachService _outreachService;
 
         public OutreachController(IOutreachService outreachService)
@@ -92,6 +99,46 @@ namespace DelgenderCommunicationsAPI.Controllers
             return deck is null
                 ? NotFound()
                 : File(deck.Value.Bytes, "application/pdf", deck.Value.FileName);
+        }
+
+        [HttpPost("{id:int}/report")]
+        [RequestSizeLimit(20_000_000)]
+        public async Task<ActionResult<OutreachDetailDto>> UploadReport(int id, IFormFile file)
+        {
+            if (file is null || file.Length == 0)
+            {
+                return BadRequest(new { message = "No report was uploaded." });
+            }
+
+            if (file.Length > 20_000_000)
+            {
+                return BadRequest(new { message = "That report is over 20 MB." });
+            }
+
+            if (!ReportContentTypes.ContainsKey(Path.GetExtension(file.FileName)))
+            {
+                return BadRequest(new { message = "The report needs to be a DOCX, TXT or PDF file." });
+            }
+
+            await using var stream = file.OpenReadStream();
+            var company = await _outreachService.UploadReportAsync(id, stream, file.FileName, CurrentStaffId());
+            return company is null ? NotFound() : Ok(company);
+        }
+
+        [HttpGet("{id:int}/report")]
+        public async Task<IActionResult> DownloadReport(int id)
+        {
+            var report = await _outreachService.DownloadReportAsync(id);
+            if (report is null)
+            {
+                return NotFound();
+            }
+
+            var contentType = ReportContentTypes.TryGetValue(Path.GetExtension(report.Value.FileName), out var type)
+                ? type
+                : "application/octet-stream";
+
+            return File(report.Value.Bytes, contentType, report.Value.FileName);
         }
 
         [HttpPost("{id:int}/send-email")]

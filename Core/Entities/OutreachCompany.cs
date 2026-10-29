@@ -19,6 +19,11 @@ namespace Core.Entities
         public string? PitchDeckFileName { get; set; }
         public DateTime? PitchDeckUploadedAt { get; set; }
 
+        public string? ReportUrl { get; set; }
+        public string? ReportPublicId { get; set; }
+        public string? ReportFileName { get; set; }
+        public DateTime? ReportUploadedAt { get; set; }
+
         public int AddedByStaffId { get; set; }
         public Staff AddedByStaff { get; set; } = null!;
 

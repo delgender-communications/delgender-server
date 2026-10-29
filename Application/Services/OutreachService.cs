@@ -208,6 +208,69 @@ namespace Application.Services
             return (bytes, DeckFileName(company));
         }
 
+        public async Task<OutreachDetailDto?> UploadReportAsync(int id, Stream fileStream, string fileName, int staffId)
+        {
+            var company = await _outreachRepository.GetByIdWithDetailsAsync(id);
+            if (company is null)
+            {
+                return null;
+            }
+
+            var staff = await RequireStaffAsync(staffId);
+            var safeName = Path.GetFileName(fileName);
+            var (url, publicId) = await _cloudinaryService.UploadRawAsync(
+                fileStream,
+                safeName,
+                "delgender/outreach-reports");
+
+            var previousName = company.ReportFileName;
+            var previousPublicId = company.ReportPublicId;
+            var now = DateTime.UtcNow;
+
+            var message = string.IsNullOrWhiteSpace(previousName)
+                ? $"uploaded the findings report \"{safeName}\"."
+                : $"replaced the findings report. The previous file was \"{previousName}\" and the new file is \"{safeName}\".";
+
+            company.ReportUrl = url;
+            company.ReportPublicId = publicId;
+            company.ReportFileName = safeName;
+            company.ReportUploadedAt = now;
+            company.UpdatedAt = now;
+            company.Logs.Add(NewLog(staff, message, now));
+
+            await _outreachRepository.SaveChangesAsync();
+
+            if (!string.IsNullOrWhiteSpace(previousPublicId))
+            {
+                await _cloudinaryService.DeleteRawAsync(previousPublicId);
+            }
+
+            return ToDetail(company);
+        }
+
+        public async Task<(byte[] Bytes, string FileName)?> DownloadReportAsync(int id)
+        {
+            var company = await _outreachRepository.GetByIdWithDetailsAsync(id);
+            if (company is null)
+            {
+                return null;
+            }
+
+            if (string.IsNullOrWhiteSpace(company.ReportUrl))
+            {
+                throw new KeyNotFoundException("This company doesn't have a findings report yet.");
+            }
+
+            var source = string.IsNullOrWhiteSpace(company.ReportPublicId)
+                ? company.ReportUrl!
+                : _cloudinaryService.GetRawDownloadUrl(company.ReportPublicId);
+
+            var bytes = await _pitchDeckFetcher.FetchAsync(source);
+
+            var name = Path.GetFileName(company.ReportFileName ?? string.Empty).Trim();
+            return (bytes, string.IsNullOrEmpty(name) ? "Findings report" : name);
+        }
+
         /// <summary>
         /// The "email it for me" pipeline:
         ///   1. lock the company so it can't be sent twice at once
@@ -466,6 +529,9 @@ namespace Application.Services
             PitchDeckFileName = company.PitchDeckFileName,
             PitchDeckUrl = company.PitchDeckUrl,
             PitchDeckUploadedAt = company.PitchDeckUploadedAt,
+            ReportFileName = company.ReportFileName,
+            ReportUrl = company.ReportUrl,
+            ReportUploadedAt = company.ReportUploadedAt,
             AddedByStaffId = company.AddedByStaffId,
             AddedByName = company.AddedByStaff is null
                 ? "A teammate"
