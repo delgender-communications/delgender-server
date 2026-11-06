@@ -8,6 +8,7 @@ namespace Core.Interfaces.Repositories
         Task<List<OutreachCompany>> GetPageAsync(int page, int pageSize, OutreachStatus? status);
         Task<int> CountAsync(OutreachStatus? status);
         Task<OutreachCompany?> GetByIdWithDetailsAsync(int id);
+        Task<ResearchLead?> GetSourceLeadAsync(int outreachCompanyId);
         Task SaveChangesAsync();
     }
 }

@@ -430,6 +430,18 @@ namespace Infrastructure.Migrations
                     b.Property<string>("PitchDeckUrl")
                         .HasColumnType("text");
 
+                    b.Property<string>("ReportFileName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReportPublicId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ReportUploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReportUrl")
+                        .HasColumnType("text");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -753,6 +765,52 @@ namespace Infrastructure.Migrations
                     b.ToTable("Staffs");
                 });
 
+            modelBuilder.Entity("Core.Entities.TeamDocument", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FilePublicId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UploadedByStaffId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UploadedByStaffId");
+
+                    b.ToTable("TeamDocuments");
+                });
+
             modelBuilder.Entity("Core.Entities.TrustedDevice", b =>
                 {
                     b.Property<int>("Id")
@@ -970,6 +1028,17 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("ResearchLead");
+                });
+
+            modelBuilder.Entity("Core.Entities.TeamDocument", b =>
+                {
+                    b.HasOne("Core.Entities.Staff", "UploadedByStaff")
+                        .WithMany()
+                        .HasForeignKey("UploadedByStaffId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("UploadedByStaff");
                 });
 
             modelBuilder.Entity("Core.Entities.TrustedDevice", b =>

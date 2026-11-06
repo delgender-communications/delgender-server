@@ -29,6 +29,13 @@ namespace Infrastructure.Repositories
                 .Include(o => o.Logs)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
+        public Task<ResearchLead?> GetSourceLeadAsync(int outreachCompanyId) =>
+            _db.ResearchLeads
+                .AsNoTracking()
+                .Include(l => l.Evidence)
+                .Include(l => l.AddedByStaff)
+                .FirstOrDefaultAsync(l => l.OutreachCompanyId == outreachCompanyId);
+
         public Task SaveChangesAsync() => _db.SaveChangesAsync();
 
         private IQueryable<OutreachCompany> Filtered(OutreachStatus? status)

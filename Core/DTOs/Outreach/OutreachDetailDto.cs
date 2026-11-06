@@ -25,6 +25,8 @@ namespace Core.DTOs.Outreach
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
+        public OutreachResearchDto? Research { get; set; }
+
         public List<OutreachLogDto> Logs { get; set; } = new();
     }
 }

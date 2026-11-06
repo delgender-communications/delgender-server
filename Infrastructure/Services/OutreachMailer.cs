@@ -36,9 +36,6 @@ namespace Infrastructure.Services
 
             var subject = Fill(OutreachEmailContent.Subject, values);
             var heading = Fill(OutreachEmailContent.Heading, values);
-            // Strip spaces at the end of each line, so a "blank" line that still holds
-            // a few spaces (easy to leave behind in an editor) is treated as blank and
-            // still starts a new paragraph.
             var text = Regex.Replace(
                 Fill(OutreachEmailContent.Body, values).Replace("\r\n", "\n"),
                 @"[ \t]+\n",

@@ -1,5 +1,6 @@
 ﻿using Core.DTOs;
 using Core.DTOs.Outreach;
+using Core.DTOs.ResearchLeads;
 using Core.Entities;
 using Core.Enums;
 using Core.Interfaces.Repositories;
@@ -16,8 +17,6 @@ namespace Application.Services
         private readonly IPitchDeckFetcher _pitchDeckFetcher;
         private readonly IOutreachMailer _outreachMailer;
 
-        // Companies whose email is being sent right now. Stops a double click (or two
-        // teammates clicking at once) from emailing the same company twice.
         private static readonly ConcurrentDictionary<int, byte> SendsInProgress = new();
 
         public OutreachService(
@@ -54,7 +53,13 @@ namespace Application.Services
         public async Task<OutreachDetailDto?> GetByIdAsync(int id)
         {
             var company = await _outreachRepository.GetByIdWithDetailsAsync(id);
-            return company is null ? null : ToDetail(company);
+            if (company is null)
+            {
+                return null;
+            }
+
+            var sourceLead = await _outreachRepository.GetSourceLeadAsync(id);
+            return ToDetail(company, sourceLead);
         }
 
         public async Task<OutreachDetailDto> CreateAsync(CreateOutreachDto dto, int staffId)
@@ -271,16 +276,6 @@ namespace Application.Services
             return (bytes, string.IsNullOrEmpty(name) ? "Findings report" : name);
         }
 
-        /// <summary>
-        /// The "email it for me" pipeline:
-        ///   1. lock the company so it can't be sent twice at once
-        ///   2. check it is Ready and has an email address and a pitch deck
-        ///   3. download the pitch deck
-        ///   4. send the email (text lives in OutreachEmailContent)
-        ///   5. mark the company Emailed and write it to the activity log
-        /// The status only changes after the email has actually gone out, so a failed
-        /// send leaves the company Ready and nothing is logged.
-        /// </summary>
         public async Task<OutreachDetailDto?> SendEmailAsync(int id, int staffId)
         {
             if (!SendsInProgress.TryAdd(id, 0))
@@ -371,8 +366,6 @@ namespace Application.Services
             return ToDetail(company);
         }
 
-        // Prefer a signed link so Cloudinary's "block PDF delivery" setting can't get
-        // in the way. Falls back to the stored URL for decks without a public id.
         private string DeckSourceUrl(OutreachCompany company) =>
             string.IsNullOrWhiteSpace(company.PitchDeckPublicId)
                 ? company.PitchDeckUrl!
@@ -517,7 +510,25 @@ namespace Application.Services
             CreatedAt = company.CreatedAt
         };
 
-        private static OutreachDetailDto ToDetail(OutreachCompany company) => new()
+        private static OutreachResearchDto ToResearch(ResearchLead lead) => new()
+        {
+            LeadId = lead.Id,
+            Website = lead.Website,
+            Industry = lead.Industry,
+            Location = lead.Location,
+            Case = lead.Case,
+            Score = lead.Score,
+            Summary = lead.Summary,
+            FoundBy = lead.AddedByStaff is null
+                ? "Research agent"
+                : $"{lead.AddedByStaff.Name} {lead.AddedByStaff.Surname}".Trim(),
+            FoundAt = lead.CreatedAt,
+            Evidence = lead.Evidence
+                .Select(e => new ResearchLeadEvidenceDto { Finding = e.Finding, SourceUrl = e.SourceUrl })
+                .ToList()
+        };
+
+        private static OutreachDetailDto ToDetail(OutreachCompany company, ResearchLead? sourceLead = null) => new()
         {
             Id = company.Id,
             CompanyName = company.CompanyName,
@@ -538,6 +549,7 @@ namespace Application.Services
                 : $"{company.AddedByStaff.Name} {company.AddedByStaff.Surname}".Trim(),
             CreatedAt = company.CreatedAt,
             UpdatedAt = company.UpdatedAt,
+            Research = sourceLead is null ? null : ToResearch(sourceLead),
             Logs = company.Logs
                 .OrderByDescending(l => l.CreatedAt)
                 .ThenByDescending(l => l.Id)
