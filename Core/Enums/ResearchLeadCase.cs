@@ -6,6 +6,7 @@
         WeakSocialPresence,
         NoWebsite,
         OutdatedWebsite,
-        Other
+        Other,
+        LowVisibility
     }
 }

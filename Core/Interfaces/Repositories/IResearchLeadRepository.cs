@@ -5,12 +5,11 @@ namespace Core.Interfaces.Repositories
 {
     public interface IResearchLeadRepository : IRepository<ResearchLead>
     {
-        Task<List<ResearchLead>> GetPageAsync(int page, int pageSize, ResearchLeadStatus? status, ResearchLeadCase? leadCase);
-        Task<int> CountAsync(ResearchLeadStatus? status, ResearchLeadCase? leadCase);
-        Task<int> CountNewAsync();
+        Task<List<ResearchLead>> GetPageAsync(int page, int pageSize, ResearchLeadStatus? status, ResearchLeadCase? leadCase, bool? needsResearch = null);
+        Task<int> CountAsync(ResearchLeadStatus? status, ResearchLeadCase? leadCase, bool? needsResearch = null);
+        Task<int> CountNewAsync(bool? needsResearch = null);
         Task<ResearchLead?> GetByIdWithDetailsAsync(int id);
 
-        // Leads that share a website host or a name key with any of the given ones.
         Task<List<ResearchLead>> FindExistingAsync(IReadOnlyCollection<string> hosts, IReadOnlyCollection<string> nameKeys);
 
         Task<List<string>> GetOutreachCompanyNamesAsync();

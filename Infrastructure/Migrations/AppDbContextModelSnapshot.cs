@@ -622,10 +622,16 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("NeedsResearch")
+                        .HasColumnType("boolean");
+
                     b.Property<int?>("OutreachCompanyId")
                         .HasColumnType("integer");
 
                     b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ResearchReason")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("ReviewedAt")
@@ -639,6 +645,9 @@ namespace Infrastructure.Migrations
 
                     b.Property<int?>("Score")
                         .HasColumnType("integer");
+
+                    b.Property<string>("SiteStack")
+                        .HasColumnType("text");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");

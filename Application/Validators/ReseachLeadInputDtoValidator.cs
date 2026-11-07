@@ -24,6 +24,8 @@ namespace Application.Validators
             RuleFor(x => x.Location).MaximumLength(120);
             RuleFor(x => x.PhoneNumber).MaximumLength(30);
             RuleFor(x => x.Summary).MaximumLength(1000);
+            RuleFor(x => x.ResearchReason).MaximumLength(1000);
+            RuleFor(x => x.SiteStack).MaximumLength(120);
 
             RuleFor(x => x.Email)
                 .MaximumLength(200)

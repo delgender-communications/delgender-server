@@ -11,9 +11,9 @@ namespace Infrastructure.Repositories
         public ResearchLeadRepository(AppDbContext db) : base(db) { }
 
         public async Task<List<ResearchLead>> GetPageAsync(
-            int page, int pageSize, ResearchLeadStatus? status, ResearchLeadCase? leadCase)
+            int page, int pageSize, ResearchLeadStatus? status, ResearchLeadCase? leadCase, bool? needsResearch = null)
         {
-            return await Filtered(status, leadCase)
+            return await Filtered(status, leadCase, needsResearch)
                 .AsNoTracking()
                 .Include(l => l.Evidence)
                 .Include(l => l.AddedByStaff)
@@ -25,11 +25,11 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public Task<int> CountAsync(ResearchLeadStatus? status, ResearchLeadCase? leadCase) =>
-            Filtered(status, leadCase).CountAsync();
+        public Task<int> CountAsync(ResearchLeadStatus? status, ResearchLeadCase? leadCase, bool? needsResearch = null) =>
+            Filtered(status, leadCase, needsResearch).CountAsync();
 
-        public Task<int> CountNewAsync() =>
-            _db.ResearchLeads.CountAsync(l => l.Status == ResearchLeadStatus.New);
+        public Task<int> CountNewAsync(bool? needsResearch = null) =>
+            Filtered(ResearchLeadStatus.New, null, needsResearch).CountAsync();
 
         public Task<ResearchLead?> GetByIdWithDetailsAsync(int id) =>
             _db.ResearchLeads
@@ -58,7 +58,7 @@ namespace Infrastructure.Repositories
 
         public Task SaveChangesAsync() => _db.SaveChangesAsync();
 
-        private IQueryable<ResearchLead> Filtered(ResearchLeadStatus? status, ResearchLeadCase? leadCase)
+        private IQueryable<ResearchLead> Filtered(ResearchLeadStatus? status, ResearchLeadCase? leadCase, bool? needsResearch)
         {
             var query = _db.ResearchLeads.AsQueryable();
 
@@ -70,6 +70,11 @@ namespace Infrastructure.Repositories
             if (leadCase is not null)
             {
                 query = query.Where(l => l.Case == leadCase);
+            }
+
+            if (needsResearch is not null)
+            {
+                query = query.Where(l => l.NeedsResearch == needsResearch);
             }
 
             return query;

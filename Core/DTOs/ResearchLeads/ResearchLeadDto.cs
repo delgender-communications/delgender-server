@@ -22,6 +22,10 @@ namespace Core.DTOs.ResearchLeads
         public int? Score { get; set; }
         public string? Summary { get; set; }
 
+        public bool NeedsResearch { get; set; }
+        public string? ResearchReason { get; set; }
+        public string? SiteStack { get; set; }
+
         public ResearchLeadStatus Status { get; set; }
         public string? DismissReason { get; set; }
         public string? ReviewedByName { get; set; }

@@ -100,13 +100,13 @@ namespace Application.Services
         }
 
         public async Task<PagedResultDto<ResearchLeadDto>> GetAllAsync(
-            int page, int pageSize, ResearchLeadStatus? status, ResearchLeadCase? leadCase)
+            int page, int pageSize, ResearchLeadStatus? status, ResearchLeadCase? leadCase, bool? needsResearch = null)
         {
             if (page < 1) page = 1;
             if (pageSize is < 1 or > 100) pageSize = 15;
 
-            var leads = await _leadRepository.GetPageAsync(page, pageSize, status, leadCase);
-            var total = await _leadRepository.CountAsync(status, leadCase);
+            var leads = await _leadRepository.GetPageAsync(page, pageSize, status, leadCase, needsResearch);
+            var total = await _leadRepository.CountAsync(status, leadCase, needsResearch);
 
             return new PagedResultDto<ResearchLeadDto>
             {
@@ -117,7 +117,7 @@ namespace Application.Services
             };
         }
 
-        public Task<int> GetNewCountAsync() => _leadRepository.CountNewAsync();
+        public Task<int> GetNewCountAsync(bool? needsResearch = null) => _leadRepository.CountNewAsync(needsResearch);
 
         public async Task<ResearchLeadDto?> GetByIdAsync(int id)
         {
@@ -271,6 +271,9 @@ namespace Application.Services
                 Case = input.Case,
                 Score = input.Score,
                 Summary = Clean(input.Summary),
+                NeedsResearch = input.NeedsResearch,
+                ResearchReason = Clean(input.ResearchReason),
+                SiteStack = Clean(input.SiteStack),
                 AddedByStaffId = addedByStaffId,
                 RunId = runId,
                 CreatedAt = DateTime.UtcNow,
@@ -307,7 +310,11 @@ namespace Application.Services
                 notes.AppendLine();
             }
 
-            notes.AppendLine($"Why we flagged it: {CaseLabel(lead.Case)}");
+            notes.AppendLine(lead.NeedsResearch
+                ? $"Why we flagged it: Needs research ({CaseLabel(lead.Case)})"
+                : $"Why we flagged it: {CaseLabel(lead.Case)}");
+            if (!string.IsNullOrWhiteSpace(lead.ResearchReason)) notes.AppendLine($"What to check: {lead.ResearchReason}");
+            if (lead.SiteStack is not null) notes.AppendLine($"Site built with: {lead.SiteStack}");
             if (lead.Website is not null) notes.AppendLine($"Website: {lead.Website}");
             if (lead.Industry is not null) notes.AppendLine($"Industry: {lead.Industry}");
             if (lead.Location is not null) notes.AppendLine($"Location: {lead.Location}");
@@ -334,6 +341,7 @@ namespace Application.Services
             ResearchLeadCase.WeakSocialPresence => "Weak social media presence",
             ResearchLeadCase.NoWebsite => "No website",
             ResearchLeadCase.OutdatedWebsite => "Outdated website",
+            ResearchLeadCase.LowVisibility => "Low online visibility",
             _ => "Other"
         };
 
@@ -349,6 +357,9 @@ namespace Application.Services
             Case = lead.Case,
             Score = lead.Score,
             Summary = lead.Summary,
+            NeedsResearch = lead.NeedsResearch,
+            ResearchReason = lead.ResearchReason,
+            SiteStack = lead.SiteStack,
             Status = lead.Status,
             DismissReason = lead.DismissReason,
             ReviewedByName = lead.ReviewedByStaff is null

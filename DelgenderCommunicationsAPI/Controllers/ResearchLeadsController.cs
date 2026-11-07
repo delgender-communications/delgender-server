@@ -25,9 +25,10 @@ namespace DelgenderCommunicationsAPI.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 15,
             [FromQuery] ResearchLeadStatus? status = null,
-            [FromQuery(Name = "case")] ResearchLeadCase? leadCase = null)
+            [FromQuery(Name = "case")] ResearchLeadCase? leadCase = null,
+            [FromQuery] bool? needsResearch = null)
         {
-            var result = await _researchLeadService.GetAllAsync(page, pageSize, status, leadCase);
+            var result = await _researchLeadService.GetAllAsync(page, pageSize, status, leadCase, needsResearch);
             return Ok(result);
         }
 
@@ -35,7 +36,11 @@ namespace DelgenderCommunicationsAPI.Controllers
         public async Task<ActionResult> GetNewCount()
         {
             var count = await _researchLeadService.GetNewCountAsync();
-            return Ok(new { count });
+            var researchCount = await _researchLeadService.GetNewCountAsync(needsResearch: true);
+
+            // "count" is every new lead, as before. The other two split it between the
+            // Recommended and Needs research lists.
+            return Ok(new { count, recommended = count - researchCount, needsResearch = researchCount });
         }
 
         [HttpGet("{id:int}")]

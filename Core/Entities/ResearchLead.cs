@@ -17,8 +17,11 @@ namespace Core.Entities
         public int? Score { get; set; }
         public string? Summary { get; set; }
 
-        // Used only to spot duplicates. WebsiteHost is "example.com" (no www), NameKey is
-        // the company name lower-cased with punctuation and "Pty Ltd"-style endings removed.
+        public bool NeedsResearch { get; set; }
+        public string? ResearchReason { get; set; }
+
+        public string? SiteStack { get; set; }
+
         public string? WebsiteHost { get; set; }
         public string NameKey { get; set; } = null!;
 
@@ -29,11 +32,9 @@ namespace Core.Entities
         public Staff? ReviewedByStaff { get; set; }
         public DateTime? ReviewedAt { get; set; }
 
-        // Set when the lead was accepted into outreach.
         public int? OutreachCompanyId { get; set; }
         public OutreachCompany? OutreachCompany { get; set; }
 
-        // Null means the research agent found it; otherwise the staff member who typed it in.
         public int? AddedByStaffId { get; set; }
         public Staff? AddedByStaff { get; set; }
 

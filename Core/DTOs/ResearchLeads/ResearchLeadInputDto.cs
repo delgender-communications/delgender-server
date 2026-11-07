@@ -40,6 +40,15 @@ namespace Core.DTOs.ResearchLeads
         [StringLength(1000)]
         public string? Summary { get; set; }
 
+        // Set by the research agent for companies a person should look into.
+        public bool NeedsResearch { get; set; }
+
+        [StringLength(1000)]
+        public string? ResearchReason { get; set; }
+
+        [StringLength(120)]
+        public string? SiteStack { get; set; }
+
         public List<ResearchLeadEvidenceInputDto> Evidence { get; set; } = new();
     }
 }
