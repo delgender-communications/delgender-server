@@ -63,6 +63,7 @@ namespace Infrastructure.Repositories
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
             return await _db.Invoices
+                .Include(i => i.Customer)
                 .Where(i => i.Status == InvoiceStatus.Sent && i.DueDate < today)
                 .ToListAsync();
         }

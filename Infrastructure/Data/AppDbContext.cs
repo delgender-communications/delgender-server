@@ -23,6 +23,9 @@ namespace Infrastructure.Data
         public DbSet<TeamDocument> TeamDocuments => Set<TeamDocument>();
         public DbSet<ResearchLead> ResearchLeads => Set<ResearchLead>();
         public DbSet<ResearchLeadEvidence> ResearchLeadEvidenceItems => Set<ResearchLeadEvidence>();
+        public DbSet<Notification> Notifications => Set<Notification>();
+        public DbSet<NotificationRead> NotificationReads => Set<NotificationRead>();
+        public DbSet<StaffChangeRequest> StaffChangeRequests => Set<StaffChangeRequest>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -220,6 +223,50 @@ namespace Infrastructure.Data
                 .WithMany(l => l.Evidence)
                 .HasForeignKey(e => e.ResearchLeadId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Notification>()
+                .HasOne<Staff>()
+                .WithMany()
+                .HasForeignKey(n => n.RecipientStaffId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => n.CreatedAt);
+
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => n.DedupeKey)
+                .IsUnique();
+
+            modelBuilder.Entity<NotificationRead>()
+                .HasOne<Notification>()
+                .WithMany()
+                .HasForeignKey(r => r.NotificationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<NotificationRead>()
+                .HasOne<Staff>()
+                .WithMany()
+                .HasForeignKey(r => r.StaffId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<NotificationRead>()
+                .HasIndex(r => new { r.NotificationId, r.StaffId })
+                .IsUnique();
+
+            modelBuilder.Entity<StaffChangeRequest>()
+                .HasOne(r => r.Staff)
+                .WithMany()
+                .HasForeignKey(r => r.StaffId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StaffChangeRequest>()
+                .HasOne(r => r.ReviewedByStaff)
+                .WithMany()
+                .HasForeignKey(r => r.ReviewedByStaffId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<StaffChangeRequest>()
+                .HasIndex(r => r.Status);
         }
     }
 }

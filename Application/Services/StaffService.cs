@@ -1,4 +1,5 @@
 ﻿using Core.DTOs;
+using Core.Utilities;
 using Core.DTOs.Auth;
 using Core.Entities;
 using Core.Interfaces.Repositories;
@@ -37,6 +38,11 @@ namespace Application.Services
                 throw new InvalidOperationException("A staff member with this email already exists.");
             }
 
+            if (!PhoneNumbers.TryNormalize(dto.PhoneNumber, out var phoneNumber))
+            {
+                throw new ArgumentException("Enter a 10-digit phone number, like 081 234 1234.");
+            }
+
             var temporaryPassword = GenerateTemporaryPassword();
             var staffCode = await _staffRepository.GenerateNextStaffCodeAsync();
 
@@ -46,7 +52,7 @@ namespace Application.Services
                 Name = dto.Name,
                 Surname = dto.Surname,
                 Email = dto.Email,
-                PhoneNumber = dto.PhoneNumber,
+                PhoneNumber = phoneNumber,
                 JobTitle = dto.JobTitle,
                 Role = dto.Role,
                 IsActive = true,
@@ -101,16 +107,24 @@ namespace Application.Services
             {
                 staff.Surname = dto.Surname;
             }
-            if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) {
-                staff.PhoneNumber = dto.PhoneNumber;
+            if (!string.IsNullOrWhiteSpace(dto.PhoneNumber))
+            {
+                if (!PhoneNumbers.TryNormalize(dto.PhoneNumber, out var phoneNumber))
+                {
+                    throw new ArgumentException("Enter a 10-digit phone number, like 081 234 1234.");
+                }
+                staff.PhoneNumber = phoneNumber;
             }
-            if (!string.IsNullOrWhiteSpace(dto.JobTitle)) {
+            if (!string.IsNullOrWhiteSpace(dto.JobTitle))
+            {
                 staff.JobTitle = dto.JobTitle;
             }
-            if (dto.Role is not null) {
+            if (dto.Role is not null)
+            {
                 staff.Role = dto.Role.Value;
             }
-            if (dto.IsActive is not null) {
+            if (dto.IsActive is not null)
+            {
                 staff.IsActive = dto.IsActive.Value;
             }
 

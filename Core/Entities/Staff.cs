@@ -21,6 +21,12 @@ namespace Core.Entities
         public bool MustChangePassword { get; set; } = true;
         public DateTime? LastLoginAt { get; set; }
 
+        public bool NotifyNewLeads { get; set; } = true;
+        public bool NotifyNewBookings { get; set; } = true;
+        public bool NotifyOverdueInvoices { get; set; } = true;
+
+        public DateTime? NotificationsSeenAt { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

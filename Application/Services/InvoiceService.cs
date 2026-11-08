@@ -1,4 +1,5 @@
 ﻿using Core.DTOs;
+using System.Globalization;
 using Core.DTOs.Invoice;
 using Core.Entities;
 using Core.Enums;
@@ -13,13 +14,16 @@ namespace Application.Services
         private readonly ICustomerRepository _customerRepository;
         private readonly IEmailService _emailService;
         private readonly IInvoicePdfService _pdfService;
+        private readonly INotificationService _notificationService;
 
         public InvoiceService(
             IInvoiceRepository invoiceRepository,
             ICustomerRepository customerRepository,
             IEmailService emailService,
-            IInvoicePdfService pdfService)
+            IInvoicePdfService pdfService,
+            INotificationService notificationService)
         {
+            _notificationService = notificationService;
             _invoiceRepository = invoiceRepository;
             _customerRepository = customerRepository;
             _emailService = emailService;
@@ -160,6 +164,15 @@ namespace Application.Services
                 invoice.Status = InvoiceStatus.Overdue;
                 invoice.UpdatedAt = DateTime.UtcNow;
                 await _invoiceRepository.UpdateAsync(invoice);
+
+                // The key means an invoice only ever creates one of these, however many
+                // times this check runs.
+                await _notificationService.NotifyEveryoneAsync(
+                    NotificationType.InvoiceOverdue,
+                    $"Invoice {invoice.InvoiceNumber} is overdue",
+                    $"{invoice.Customer?.FullName ?? "A client"} · R{invoice.TotalAmount.ToString("N2", CultureInfo.InvariantCulture)} · due {invoice.DueDate.ToString("d MMM yyyy", CultureInfo.InvariantCulture)}",
+                    "/invoices",
+                    dedupeKey: $"invoice-overdue:{invoice.Id}");
             }
 
             return candidates.Count;

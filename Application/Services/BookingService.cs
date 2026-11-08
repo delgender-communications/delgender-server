@@ -1,4 +1,6 @@
 ﻿using Core.DTOs;
+using System.Globalization;
+using Core.Utilities;
 using Core.DTOs.Booking;
 using Core.Entities;
 using Core.Enums;
@@ -15,10 +17,13 @@ namespace Application.Services
         private readonly IConfirmationRepository _confirmationRepository;
         private readonly IStaffRepository _staffRepository;
         private readonly IBackgroundTaskQueue _backgroundTaskQueue;
+        private readonly INotificationService _notificationService;
 
         public BookingService(IBookingRepository bookingRepository, IConfirmationRepository confirmationRepository,
-            ICustomerRepository customerRepository, IStaffRepository staffRepository, IBackgroundTaskQueue backgroundTaskQueue)
+            ICustomerRepository customerRepository, IStaffRepository staffRepository, IBackgroundTaskQueue backgroundTaskQueue,
+            INotificationService notificationService)
         {
+            _notificationService = notificationService;
             _bookingRepository = bookingRepository;
             _confirmationRepository = confirmationRepository;
             _customerRepository = customerRepository;
@@ -45,7 +50,7 @@ namespace Application.Services
                     JobTitle = dto.JobTitle,
                     CompanyName = dto.CompanyName,
                     Email = dto.Email,
-                    PhoneNumber = dto.PhoneNumber,
+                    PhoneNumber = PhoneNumbers.Normalize(dto.PhoneNumber),
                     Industry = dto.Industry,
                     IdNumber = dto.IdNumber,
                     ContactPermission = dto.ContactPermission
@@ -58,7 +63,7 @@ namespace Application.Services
                 customer.FullName = dto.FullName;
                 customer.JobTitle = dto.JobTitle;
                 customer.CompanyName = dto.CompanyName;
-                customer.PhoneNumber = dto.PhoneNumber;
+                customer.PhoneNumber = PhoneNumbers.Normalize(dto.PhoneNumber);
                 customer.Industry = dto.Industry;
                 customer.IdNumber = dto.IdNumber ?? customer.IdNumber;
                 customer.ContactPermission = dto.ContactPermission;
@@ -92,6 +97,16 @@ namespace Application.Services
             };
 
             confirmation = await _confirmationRepository.CreateAsync(confirmation);
+
+            var who = string.IsNullOrWhiteSpace(customer.CompanyName)
+                ? customer.FullName
+                : $"{customer.FullName} · {customer.CompanyName}";
+
+            await _notificationService.NotifyEveryoneAsync(
+                NotificationType.NewBooking,
+                $"New booking {booking.BookingReference}",
+                $"{who} · {booking.Date.ToString("d MMM yyyy", CultureInfo.InvariantCulture)} at {booking.Time.ToString("HH:mm", CultureInfo.InvariantCulture)}",
+                "/");
 
             await SendConfirmationAsync(booking, confirmation);
 

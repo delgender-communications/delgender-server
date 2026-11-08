@@ -388,6 +388,78 @@ namespace Infrastructure.Migrations
                     b.ToTable("LoginOtps");
                 });
 
+            modelBuilder.Entity("Core.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AdminOnly")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Body")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DedupeKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("LinkUrl")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("RecipientStaffId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("DedupeKey")
+                        .IsUnique();
+
+                    b.HasIndex("RecipientStaffId");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("Core.Entities.NotificationRead", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("NotificationId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("StaffId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StaffId");
+
+                    b.HasIndex("NotificationId", "StaffId")
+                        .IsUnique();
+
+                    b.ToTable("NotificationReads");
+                });
+
             modelBuilder.Entity("Core.Entities.OutreachCompany", b =>
                 {
                     b.Property<int>("Id")
@@ -735,6 +807,18 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("NotificationsSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("NotifyNewBookings")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("NotifyNewLeads")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("NotifyOverdueInvoices")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
@@ -772,6 +856,57 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Staffs");
+                });
+
+            modelBuilder.Entity("Core.Entities.StaffChangeRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NewSurname")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NewValue")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("OldValue")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReviewNote")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ReviewedByStaffId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StaffId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReviewedByStaffId");
+
+                    b.HasIndex("StaffId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("StaffChangeRequests");
                 });
 
             modelBuilder.Entity("Core.Entities.TeamDocument", b =>
@@ -957,6 +1092,29 @@ namespace Infrastructure.Migrations
                     b.Navigation("Staff");
                 });
 
+            modelBuilder.Entity("Core.Entities.Notification", b =>
+                {
+                    b.HasOne("Core.Entities.Staff", null)
+                        .WithMany()
+                        .HasForeignKey("RecipientStaffId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Core.Entities.NotificationRead", b =>
+                {
+                    b.HasOne("Core.Entities.Notification", null)
+                        .WithMany()
+                        .HasForeignKey("NotificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Staff", null)
+                        .WithMany()
+                        .HasForeignKey("StaffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Core.Entities.OutreachCompany", b =>
                 {
                     b.HasOne("Core.Entities.Staff", "AddedByStaff")
@@ -1037,6 +1195,24 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("ResearchLead");
+                });
+
+            modelBuilder.Entity("Core.Entities.StaffChangeRequest", b =>
+                {
+                    b.HasOne("Core.Entities.Staff", "ReviewedByStaff")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByStaffId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Core.Entities.Staff", "Staff")
+                        .WithMany()
+                        .HasForeignKey("StaffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReviewedByStaff");
+
+                    b.Navigation("Staff");
                 });
 
             modelBuilder.Entity("Core.Entities.TeamDocument", b =>

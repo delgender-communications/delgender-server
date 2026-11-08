@@ -40,6 +40,8 @@ try
     builder.Services.AddScoped<IOutreachRepository, OutreachRepository>();
     builder.Services.AddScoped<IResearchLeadRepository, ResearchLeadRepository>();
     builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+    builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+    builder.Services.AddScoped<IStaffChangeRequestRepository, StaffChangeRequestRepository>();
 
     // Services
     builder.Services.AddOptions();
@@ -125,6 +127,8 @@ try
     builder.Services.AddScoped<IOutreachService, OutreachService>();
     builder.Services.AddScoped<IResearchLeadService, ResearchLeadService>();
     builder.Services.AddScoped<IDocumentService, DocumentService>();
+    builder.Services.AddScoped<INotificationService, NotificationService>();
+    builder.Services.AddScoped<IStaffChangeService, StaffChangeService>();
     builder.Services.AddScoped<AgentApiKeyFilter>();
 
     builder.Services.AddScoped<IInvoicePdfService, InvoicePdfService>();
@@ -234,6 +238,10 @@ try
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await AdminSeeder.SeedAsync(db, app.Configuration);
+
+        // Keeps every stored phone number in the 10-digit form. Does nothing once they
+        // all are, so it is safe to leave in.
+        await PhoneNumberBackfill.RunAsync(db);
 
         var invoiceService = scope.ServiceProvider.GetRequiredService<IInvoiceService>();
         await invoiceService.RefreshOverdueInvoicesAsync();

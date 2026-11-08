@@ -1,4 +1,5 @@
 ﻿using Core.DTOs;
+using Core.Utilities;
 using Core.DTOs.ResearchLeads;
 using Core.Entities;
 using Core.Enums;
@@ -14,11 +15,14 @@ namespace Application.Services
 
         private readonly IResearchLeadRepository _leadRepository;
         private readonly IStaffRepository _staffRepository;
+        private readonly INotificationService _notificationService;
 
         public ResearchLeadService(
             IResearchLeadRepository leadRepository,
-            IStaffRepository staffRepository)
+            IStaffRepository staffRepository,
+            INotificationService notificationService)
         {
+            _notificationService = notificationService;
             _leadRepository = leadRepository;
             _staffRepository = staffRepository;
         }
@@ -65,6 +69,19 @@ namespace Application.Services
             if (toAdd.Count > 0)
             {
                 await _leadRepository.AddRangeAsync(toAdd);
+
+                // One update per run, not one per lead.
+                var research = toAdd.Count(l => l.NeedsResearch);
+                var recommended = toAdd.Count - research;
+                var parts = new List<string>();
+                if (recommended > 0) parts.Add($"{recommended} recommended");
+                if (research > 0) parts.Add($"{research} to research");
+
+                await _notificationService.NotifyEveryoneAsync(
+                    NotificationType.NewLead,
+                    toAdd.Count == 1 ? "1 new lead from the research agent" : $"{toAdd.Count} new leads from the research agent",
+                    string.Join(" · ", parts),
+                    "/outreach");
             }
 
             result.Added = toAdd.Count;
@@ -267,7 +284,7 @@ namespace Application.Services
                 Industry = Clean(input.Industry),
                 Location = Clean(input.Location),
                 Email = Clean(input.Email),
-                PhoneNumber = Clean(input.PhoneNumber),
+                PhoneNumber = PhoneNumbers.NormalizeOrNull(Clean(input.PhoneNumber)),
                 Case = input.Case,
                 Score = input.Score,
                 Summary = Clean(input.Summary),

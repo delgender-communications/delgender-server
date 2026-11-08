@@ -1,4 +1,5 @@
 ﻿using Core.DTOs;
+using Core.Utilities;
 using Core.DTOs.Outreach;
 using Core.DTOs.ResearchLeads;
 using Core.Entities;
@@ -72,7 +73,7 @@ namespace Application.Services
                 CompanyName = dto.CompanyName.Trim(),
                 ContactName = Clean(dto.ContactName),
                 Email = Clean(dto.Email),
-                PhoneNumber = Clean(dto.PhoneNumber),
+                PhoneNumber = PhoneNumbers.NormalizeOrNull(Clean(dto.PhoneNumber)),
                 Notes = Clean(dto.Notes),
                 Status = dto.Status,
                 AddedByStaffId = staff.Id,
@@ -112,7 +113,7 @@ namespace Application.Services
 
             changed |= ApplyOptional(company, staff, now, "contact", company.ContactName, Clean(dto.ContactName), value => company.ContactName = value);
             changed |= ApplyOptional(company, staff, now, "email", company.Email, Clean(dto.Email), value => company.Email = value);
-            changed |= ApplyOptional(company, staff, now, "phone number", company.PhoneNumber, Clean(dto.PhoneNumber), value => company.PhoneNumber = value);
+            changed |= ApplyOptional(company, staff, now, "phone number", company.PhoneNumber, PhoneNumbers.NormalizeOrNull(Clean(dto.PhoneNumber)), value => company.PhoneNumber = value);
 
             var notes = Clean(dto.Notes);
             if (!string.Equals(company.Notes, notes, StringComparison.Ordinal))

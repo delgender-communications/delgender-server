@@ -1,4 +1,5 @@
 ﻿using Core.DTOs;
+using Core.Utilities;
 using Core.DTOs.Client;
 using Core.Entities;
 using Core.Enums;
@@ -52,7 +53,7 @@ namespace Application.Services
                 JobTitle = dto.JobTitle,
                 CompanyName = dto.CompanyName,
                 Email = dto.Email,
-                PhoneNumber = dto.PhoneNumber,
+                PhoneNumber = PhoneNumbers.Normalize(dto.PhoneNumber),
                 Industry = dto.Industry,
                 ContactPermission = dto.ContactPermission,
                 Status = dto.Status,
