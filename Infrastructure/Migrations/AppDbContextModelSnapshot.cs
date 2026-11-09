@@ -291,7 +291,7 @@ namespace Infrastructure.Migrations
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("numeric");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -421,6 +421,9 @@ namespace Infrastructure.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAt");
@@ -441,6 +444,9 @@ namespace Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("NotificationId")
                         .HasColumnType("integer");
 
@@ -449,6 +455,9 @@ namespace Infrastructure.Migrations
 
                     b.Property<int>("StaffId")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -553,6 +562,9 @@ namespace Infrastructure.Migrations
 
                     b.Property<int?>("StaffId")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -727,6 +739,9 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Summary")
                         .HasColumnType("text");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Website")
                         .HasColumnType("text");
 
@@ -758,6 +773,9 @@ namespace Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Finding")
                         .IsRequired()
                         .HasColumnType("text");
@@ -767,6 +785,9 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("SourceUrl")
                         .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -897,6 +918,9 @@ namespace Infrastructure.Migrations
 
                     b.Property<int>("Type")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
