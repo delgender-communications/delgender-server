@@ -22,7 +22,7 @@
             - The key issues we'd fix first, in plain language
             - A simple roadmap and how we'd measure the results
 
-            We think there's a real opportunity here and we'd love to walk you through it. Would you be open to a few minutes' call any time soon? Just reply with a time that suits you and we'll make it work, or visit our website to make an appointment for the time that suits you at https://delgendercommunications.co.za/.
+            We think there's a real opportunity here and we'd love to walk you through it. Would you be open to a few minutes' call any time soon? Just reply with a time that suits you and we'll make it work, or visit our website to make an appointment for the time that suits you at https://delgendercommunications.co.za.
 
             If now isn't the right time, no problem at all. The deck is yours to keep either way.
 
