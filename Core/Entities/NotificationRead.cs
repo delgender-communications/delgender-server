@@ -8,5 +8,8 @@
         public int StaffId { get; set; }
 
         public DateTime ReadAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 }

@@ -40,6 +40,7 @@ namespace Core.Entities
 
         public string? RunId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         public ICollection<ResearchLeadEvidence> Evidence { get; set; } = new List<ResearchLeadEvidence>();
     }

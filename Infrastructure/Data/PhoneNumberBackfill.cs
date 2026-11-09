@@ -12,7 +12,10 @@ namespace Infrastructure.Data
 
             string? Fix(string? current)
             {
-                if (string.IsNullOrWhiteSpace(current)) return current;
+                if (string.IsNullOrWhiteSpace(current))
+                {
+                    return current;
+                }
 
                 if (!PhoneNumbers.TryNormalize(current, out var normalized))
                 {

@@ -4,8 +4,6 @@ namespace Application.Services
 {
     public static class ResearchLeadNormalizer
     {
-        // Sites that many unrelated businesses sit on. Matching on these would wrongly
-        // treat two different companies as the same one.
         private static readonly string[] SharedHosts =
         {
             "facebook.com", "instagram.com", "linkedin.com", "twitter.com", "x.com",
@@ -18,8 +16,6 @@ namespace Application.Services
             "pty", "ltd", "limited", "inc", "llc", "cc", "co", "corp", "corporation", "proprietary"
         };
 
-        // Accepts "example.com", "www.example.com/about" or a full URL. Returns false for
-        // anything that isn't a plain web address.
         public static bool TryNormalizeWebsite(string? input, out string url, out string host)
         {
             url = string.Empty;
@@ -53,7 +49,6 @@ namespace Application.Services
             return true;
         }
 
-        // The host to compare on, or null when the site is a shared platform.
         public static string? DedupeHost(string host) =>
             SharedHosts.Any(shared => host == shared || host.EndsWith("." + shared)) ? null : host;
 

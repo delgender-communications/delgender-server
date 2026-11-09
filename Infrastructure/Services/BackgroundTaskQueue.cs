@@ -4,9 +4,9 @@ using System.Threading.Channels;
 namespace Infrastructure.Services
 {
     /// <summary>
-    /// In-memory fire-and-forget queue. A request handler enqueues work and returns
-    /// immediately; a single BackgroundService (QueuedHostedService) drains the queue
-    /// in the same process. Nothing here survives a process restart/sleep. It's for
+    /// in-memory fire-and-forget queue. a request handler enqueues work and returns
+    /// immediately, a single BackgroundService (QueuedHostedService) drains the queue
+    /// in the same process. nothing here survives a process restart/sleep. it's for
     /// "kick off a quick reconciliation whenever someone happens to log in", not a
     /// durable job scheduler.
     /// </summary>

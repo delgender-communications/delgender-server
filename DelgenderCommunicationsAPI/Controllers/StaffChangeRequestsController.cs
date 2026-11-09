@@ -7,10 +7,6 @@ using System.Security.Claims;
 
 namespace DelgenderCommunicationsAPI.Controllers
 {
-    /// <summary>
-    /// Staff can't edit their own name, email or phone number. They ask here, and an
-    /// admin approves or declines. Nothing changes until it's approved.
-    /// </summary>
     [ApiController]
     [Route("api/v1/staff")]
     [Authorize]
@@ -43,7 +39,6 @@ namespace DelgenderCommunicationsAPI.Controllers
             return await _changeService.CancelAsync(StaffId, id) ? NoContent() : NotFound();
         }
 
-        // Admin: what needs a decision. Pass ?status=Approved (or Rejected, Cancelled) for history.
         [HttpGet("change-requests")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<List<StaffChangeRequestDto>>> GetByStatus(

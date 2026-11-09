@@ -30,15 +30,12 @@ namespace DelgenderCommunicationsAPI.Controllers
             return Ok(await _notificationService.GetPageAsync(StaffId, page, pageSize, unreadOnly));
         }
 
-        // The sidebar polls this. It's cheap: three counts.
         [HttpGet("summary")]
         public async Task<ActionResult<NotificationSummaryDto>> GetSummary()
         {
             return Ok(await _notificationService.GetSummaryAsync(StaffId));
         }
 
-        // Called when Updates is opened. Clears the sidebar number only. Nothing is
-        // marked as read.
         [HttpPost("seen")]
         public async Task<ActionResult<NotificationSummaryDto>> MarkSeen()
         {

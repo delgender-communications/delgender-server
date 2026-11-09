@@ -16,12 +16,8 @@ namespace Application.Services
         private readonly IInvoicePdfService _pdfService;
         private readonly INotificationService _notificationService;
 
-        public InvoiceService(
-            IInvoiceRepository invoiceRepository,
-            ICustomerRepository customerRepository,
-            IEmailService emailService,
-            IInvoicePdfService pdfService,
-            INotificationService notificationService)
+        public InvoiceService(IInvoiceRepository invoiceRepository, ICustomerRepository customerRepository,
+            IEmailService emailService, IInvoicePdfService pdfService, INotificationService notificationService)
         {
             _notificationService = notificationService;
             _invoiceRepository = invoiceRepository;
@@ -165,8 +161,6 @@ namespace Application.Services
                 invoice.UpdatedAt = DateTime.UtcNow;
                 await _invoiceRepository.UpdateAsync(invoice);
 
-                // The key means an invoice only ever creates one of these, however many
-                // times this check runs.
                 await _notificationService.NotifyEveryoneAsync(
                     NotificationType.InvoiceOverdue,
                     $"Invoice {invoice.InvoiceNumber} is overdue",

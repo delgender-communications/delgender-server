@@ -17,9 +17,7 @@ namespace Application.Services
         private readonly IStaffRepository _staffRepository;
         private readonly INotificationService _notificationService;
 
-        public StaffChangeService(
-            IStaffChangeRequestRepository requestRepository,
-            IStaffRepository staffRepository,
+        public StaffChangeService(IStaffChangeRequestRepository requestRepository, IStaffRepository staffRepository,
             INotificationService notificationService)
         {
             _requestRepository = requestRepository;
@@ -127,7 +125,10 @@ namespace Application.Services
         public async Task<bool> CancelAsync(int staffId, int requestId)
         {
             var request = await _requestRepository.GetByIdWithPeopleAsync(requestId);
-            if (request is null || request.StaffId != staffId) return false;
+            if (request is null || request.StaffId != staffId)
+            {
+                return false;
+            }
 
             if (request.Status != ChangeRequestStatus.Pending)
             {
@@ -178,7 +179,6 @@ namespace Application.Services
                 ? null
                 : trimmed[..Math.Min(trimmed.Length, MaxNoteLength)];
 
-            // Saves the request and, when approved, the change to the staff member.
             await _requestRepository.SaveAsync();
 
             await _notificationService.NotifyStaffAsync(
@@ -203,7 +203,7 @@ namespace Application.Services
                     break;
 
                 case ChangeRequestType.Email:
-                    // Checked again: someone else may have taken it since it was asked for.
+
                     var existing = await _staffRepository.GetByEmailAsync(request.NewValue);
                     if (existing is not null && existing.Id != staff.Id)
                     {

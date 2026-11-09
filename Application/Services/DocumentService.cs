@@ -9,7 +9,6 @@ namespace Application.Services
 {
     public class DocumentService : IDocumentService
     {
-        // Email providers cap the total size of attachments, so stay well under it.
         private const long MaxEmailBytes = 30_000_000;
 
         private readonly IDocumentRepository _documentRepository;
@@ -19,16 +18,10 @@ namespace Application.Services
         private readonly IPitchDeckFetcher _fileFetcher;
         private readonly IDocumentMailer _documentMailer;
 
-        // Clients whose documents are being sent right now. Stops a double click (or two
-        // teammates clicking at once) from emailing the same client twice.
         private static readonly ConcurrentDictionary<int, byte> SendsInProgress = new();
 
-        public DocumentService(
-            IDocumentRepository documentRepository,
-            ICustomerRepository customerRepository,
-            IStaffRepository staffRepository,
-            ICloudinaryService cloudinaryService,
-            IPitchDeckFetcher fileFetcher,
+        public DocumentService(IDocumentRepository documentRepository, ICustomerRepository customerRepository,
+            IStaffRepository staffRepository, ICloudinaryService cloudinaryService, IPitchDeckFetcher fileFetcher,
             IDocumentMailer documentMailer)
         {
             _documentRepository = documentRepository;
@@ -130,13 +123,6 @@ namespace Application.Services
             };
         }
 
-        /// <summary>
-        /// Emails the ticked documents to one client:
-        ///   1. lock the client so it can't be sent twice at once
-        ///   2. check the client has an email address and every document still exists
-        ///   3. download the documents
-        ///   4. send the email with the subject and body the staff member settled on
-        /// </summary>
         public async Task<DocumentsSentDto?> SendEmailAsync(EmailDocumentsDto dto, int staffId)
         {
             var client = await _customerRepository.GetByIdAsync(dto.ClientId);

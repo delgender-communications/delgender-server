@@ -6,9 +6,9 @@ using Microsoft.Extensions.Configuration;
 namespace Infrastructure.Data
 {
     /// <summary>
-    /// One-time bootstrap: creates the very first Admin account from config so there's
-    /// someone who can log in and create everyone else. Does nothing once any Staff exists,
-    /// and does nothing if the config values aren't set. Safe to leave wired up permanently.
+    /// one-time bootstrap: creates the very first admin account from config so there's
+    /// someone who can log in and create everyone else. does nothing once any staff exists,
+    /// and does nothing if the config values aren't set
     /// </summary>
     public static class AdminSeeder
     {

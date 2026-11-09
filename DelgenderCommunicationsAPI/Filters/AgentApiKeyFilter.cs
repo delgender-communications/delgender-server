@@ -5,9 +5,7 @@ using System.Text;
 
 namespace DelgenderCommunicationsAPI.Filters
 {
-    // Lets the research agent in with a shared secret instead of a staff login.
-    // It is an authorization filter, so it runs before validation and before the
-    // request body is looked at.
+    // lets the research agent in with a shared secret instead of a staff login
     public class AgentApiKeyFilter : IAsyncAuthorizationFilter
     {
         private const string HeaderName = "X-Api-Key";
@@ -23,8 +21,6 @@ namespace DelgenderCommunicationsAPI.Filters
         public Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
             var expected = _configuration["ResearchAgent:ApiKey"];
-
-            // A missing or short key means the endpoint is switched off, never open.
             if (string.IsNullOrWhiteSpace(expected) || expected.Length < MinKeyLength)
             {
                 context.Result = new ObjectResult(new ProblemDetails

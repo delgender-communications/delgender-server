@@ -239,8 +239,7 @@ try
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await AdminSeeder.SeedAsync(db, app.Configuration);
 
-        // Keeps every stored phone number in the 10-digit form. Does nothing once they
-        // all are, so it is safe to leave in.
+        // keeps every stored phone number in the 10-digit form. does nothing once they all are
         await PhoneNumberBackfill.RunAsync(db);
 
         var invoiceService = scope.ServiceProvider.GetRequiredService<IInvoiceService>();

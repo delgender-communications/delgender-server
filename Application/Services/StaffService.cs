@@ -18,11 +18,8 @@ namespace Application.Services
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IConfiguration _configuration;
 
-        public StaffService(
-            IStaffRepository staffRepository,
-            IEmailService emailService,
-            ICloudinaryService cloudinaryService,
-            IConfiguration configuration)
+        public StaffService(IStaffRepository staffRepository, IEmailService emailService,
+            ICloudinaryService cloudinaryService, IConfiguration configuration)
         {
             _staffRepository = staffRepository;
             _emailService = emailService;

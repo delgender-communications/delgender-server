@@ -19,6 +19,7 @@ namespace Core.Entities
         public ChangeRequestStatus Status { get; set; } = ChangeRequestStatus.Pending;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? ReviewedAt { get; set; }
 
         public int? ReviewedByStaffId { get; set; }

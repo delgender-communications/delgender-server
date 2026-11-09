@@ -14,15 +14,11 @@ namespace Application.Services
         private readonly INotificationRepository _notificationRepository;
         private readonly IStaffRepository _staffRepository;
 
-        public NotificationService(
-            INotificationRepository notificationRepository,
-            IStaffRepository staffRepository)
+        public NotificationService(INotificationRepository notificationRepository, IStaffRepository staffRepository)
         {
             _notificationRepository = notificationRepository;
             _staffRepository = staffRepository;
         }
-
-        // ---- Creating notifications. These never throw. ----
 
         public Task NotifyEveryoneAsync(NotificationType type, string title, string? body, string? linkUrl, string? dedupeKey = null) =>
             CreateAsync(new Notification

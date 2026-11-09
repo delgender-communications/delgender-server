@@ -5,8 +5,8 @@ using System.Text.RegularExpressions;
 namespace Infrastructure.Services
 {
     /// <summary>
-    /// Loads .html/.txt files from the EmailTemplates folder and fills in {{Token}}
-    /// placeholders. Files are cached in memory after their first read per process.
+    /// loads .html/.txt files from the EmailTemplates folder and fills in {{Token}}
+    /// placeholders. files are cached in memory after their first read per process.
     /// </summary>
     public class EmailTemplateRenderer : IEmailTemplateRenderer
     {
@@ -78,8 +78,6 @@ namespace Infrastructure.Services
                 if (Directory.Exists(candidate)) return candidate;
             }
 
-            // Doesn't exist yet in either place - return the dotnet-run-style path so
-            // the FileNotFoundException above points somewhere sensible.
             return candidates[0];
         }
     }

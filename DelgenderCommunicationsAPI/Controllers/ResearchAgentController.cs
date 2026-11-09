@@ -5,8 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DelgenderCommunicationsAPI.Controllers
 {
-    // The one door the research agent uses. Everything staff do with leads is in
-    // ResearchLeadsController.
     [ApiController]
     [Route("api/v1/research-agent")]
     [ServiceFilter(typeof(AgentApiKeyFilter))]

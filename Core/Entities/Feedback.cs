@@ -2,10 +2,6 @@
 {
     public class Feedback
     {
-        /// <summary>
-        /// a record is created when a staff member ends collab with a customer
-        /// and opts to send a feedback request to customer
-        /// </summary>
         public int Id { get; set; }
 
         public int CustomerId { get; set; }

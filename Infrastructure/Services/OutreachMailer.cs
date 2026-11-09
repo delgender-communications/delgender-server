@@ -91,8 +91,6 @@ namespace Infrastructure.Services
             return result;
         }
 
-        // Same paragraph styling as the other emails. Blank line = new paragraph,
-        // a single line break inside a paragraph is kept.
         private static string ToHtml(string text) =>
             string.Join(string.Empty, text
                 .Split("\n\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)

@@ -33,14 +33,10 @@ namespace Core.DTOs.ResearchLeads
         public string? PhoneNumber { get; set; }
 
         public ResearchLeadCase Case { get; set; } = ResearchLeadCase.Other;
-
-        // 0 to 100. Optional, because a lead typed in by hand has no score.
         public int? Score { get; set; }
 
         [StringLength(1000)]
         public string? Summary { get; set; }
-
-        // Set by the research agent for companies a person should look into.
         public bool NeedsResearch { get; set; }
 
         [StringLength(1000)]

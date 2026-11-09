@@ -5,7 +5,6 @@ namespace Infrastructure.Services
 {
     public class PitchDeckFetcher : IPitchDeckFetcher
     {
-        // One shared client for the app's lifetime.
         private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(60) };
 
         public async Task<byte[]> FetchAsync(string url, CancellationToken cancellationToken = default)

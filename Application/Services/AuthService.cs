@@ -112,12 +112,6 @@ namespace Application.Services
             };
         }
 
-        /// <summary>
-        /// Creates a fresh OTP row and queues the email. Dispatch is deliberately
-        /// backgrounded so login/resend return immediately rather than waiting on
-        /// Resend - the "resend code" button on the OTP screen is what covers the
-        /// case where a send fails or the email is slow to arrive.
-        /// </summary>
         private async Task IssueOtpAsync(Staff staff)
         {
             var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");

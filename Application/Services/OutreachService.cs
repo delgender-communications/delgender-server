@@ -20,12 +20,8 @@ namespace Application.Services
 
         private static readonly ConcurrentDictionary<int, byte> SendsInProgress = new();
 
-        public OutreachService(
-            IOutreachRepository outreachRepository,
-            IStaffRepository staffRepository,
-            ICloudinaryService cloudinaryService,
-            IPitchDeckFetcher pitchDeckFetcher,
-            IOutreachMailer outreachMailer)
+        public OutreachService(IOutreachRepository outreachRepository, IStaffRepository staffRepository,
+            ICloudinaryService cloudinaryService, IPitchDeckFetcher pitchDeckFetcher, IOutreachMailer outreachMailer)
         {
             _outreachRepository = outreachRepository;
             _staffRepository = staffRepository;
@@ -330,7 +326,6 @@ namespace Application.Services
                 }
                 catch
                 {
-                    // The email is already out, so don't let anyone retry blindly.
                     throw new InvalidOperationException(
                         "The email was sent, but we couldn't update the status. Please mark it as Emailed yourself so nobody sends it twice.");
                 }

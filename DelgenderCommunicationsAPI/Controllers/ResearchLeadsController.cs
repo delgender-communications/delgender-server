@@ -38,8 +38,6 @@ namespace DelgenderCommunicationsAPI.Controllers
             var count = await _researchLeadService.GetNewCountAsync();
             var researchCount = await _researchLeadService.GetNewCountAsync(needsResearch: true);
 
-            // "count" is every new lead, as before. The other two split it between the
-            // Recommended and Needs research lists.
             return Ok(new { count, recommended = count - researchCount, needsResearch = researchCount });
         }
 

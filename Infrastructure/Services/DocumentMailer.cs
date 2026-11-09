@@ -20,9 +20,6 @@ namespace Infrastructure.Services
         public async Task SendAsync(DocumentsEmail email, CancellationToken cancellationToken = default)
         {
             var subject = email.Subject.Trim();
-
-            // Strip trailing spaces on each line so a "blank" line that still holds a few
-            // spaces still starts a new paragraph.
             var text = Regex.Replace(
                 email.Body.Replace("\r\n", "\n"),
                 @"[ \t]+\n",
@@ -62,7 +59,6 @@ namespace Infrastructure.Services
             await _resend.EmailSendAsync(message, cancellationToken);
         }
 
-        // Blank line = new paragraph, a single line break inside a paragraph is kept.
         private static string ToHtml(string text) =>
             string.Join(string.Empty, text
                 .Split("\n\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
