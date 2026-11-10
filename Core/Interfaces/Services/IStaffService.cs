@@ -10,5 +10,6 @@ namespace Core.Interfaces.Services
         Task<StaffDto?> GetByIdAsync(int id);
         Task<StaffDto?> UpdateAsync(int id, UpdateStaffDto dto);
         Task<StaffDto?> UpdateProfilePictureAsync(int id, Stream fileStream, string fileName);
+        Task<StaffDto?> RemoveProfilePictureAsync(int id);
     }
 }

@@ -30,6 +30,9 @@ namespace DelgenderCommunicationsAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<PagedResultDto<StaffDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
+            // Non-admins get a directory view: name, job title, staff ID, avatar only.
+            // The sensitive fields (role, active status, last login, email, phone) are
+            // stripped in the service rather than just hidden in the UI.
             var isAdmin = User.IsInRole("Admin");
             var result = await _staffService.GetAllAsync(page, pageSize, isAdmin);
             return Ok(result);
@@ -75,6 +78,14 @@ namespace DelgenderCommunicationsAPI.Controllers
             var id = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             await using var stream = file.OpenReadStream();
             var staff = await _staffService.UpdateProfilePictureAsync(id, stream, file.FileName);
+            return staff is null ? NotFound() : Ok(staff);
+        }
+
+        [HttpDelete("me/profile-picture")]
+        public async Task<ActionResult<StaffDto>> RemoveMyProfilePicture()
+        {
+            var id = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var staff = await _staffService.RemoveProfilePictureAsync(id);
             return staff is null ? NotFound() : Ok(staff);
         }
 

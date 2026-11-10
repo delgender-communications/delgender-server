@@ -18,8 +18,11 @@ namespace Application.Services
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IConfiguration _configuration;
 
-        public StaffService(IStaffRepository staffRepository, IEmailService emailService,
-            ICloudinaryService cloudinaryService, IConfiguration configuration)
+        public StaffService(
+            IStaffRepository staffRepository,
+            IEmailService emailService,
+            ICloudinaryService cloudinaryService,
+            IConfiguration configuration)
         {
             _staffRepository = staffRepository;
             _emailService = emailService;
@@ -152,6 +155,37 @@ namespace Application.Services
             if (!string.IsNullOrWhiteSpace(previousPublicId))
             {
                 await _cloudinaryService.DeleteImageAsync(previousPublicId);
+            }
+
+            return ToDto(staff);
+        }
+
+        public async Task<StaffDto?> RemoveProfilePictureAsync(int id)
+        {
+            var staff = await _staffRepository.GetByIdAsync(id);
+            if (staff is null)
+            {
+                return null;
+            }
+
+            var publicId = staff.ProfilePicturePublicId;
+
+            staff.ProfilePictureUrl = null;
+            staff.ProfilePicturePublicId = null;
+            staff.UpdatedAt = DateTime.UtcNow;
+
+            await _staffRepository.UpdateAsync(staff);
+
+            if (!string.IsNullOrWhiteSpace(publicId))
+            {
+                try
+                {
+                    await _cloudinaryService.DeleteImageAsync(publicId);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Could not delete the old profile picture file: " + ex.Message);
+                }
             }
 
             return ToDto(staff);
