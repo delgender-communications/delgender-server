@@ -21,6 +21,7 @@ namespace Application.Validators
                 .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
             RuleFor(x => x.Status).IsInEnum();
+            RuleFor(x => x.CancelReason).MaximumLength(200);
         }
     }
 }

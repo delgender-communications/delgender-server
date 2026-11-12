@@ -480,6 +480,9 @@ namespace Infrastructure.Migrations
                     b.Property<int>("AddedByStaffId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("CancelReason")
+                        .HasColumnType("text");
+
                     b.Property<string>("CompanyName")
                         .IsRequired()
                         .HasColumnType("text");

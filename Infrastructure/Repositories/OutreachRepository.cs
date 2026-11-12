@@ -14,7 +14,12 @@ namespace Infrastructure.Repositories
         {
             return await Filtered(status)
                 .AsNoTracking()
-                .OrderByDescending(o => o.UpdatedAt)
+                .OrderBy(o =>
+                    o.Status == OutreachStatus.Ready ? 0 :
+                    o.Status == OutreachStatus.Researching ? 1 :
+                    o.Status == OutreachStatus.Emailed ? 2 : 3)
+                .ThenByDescending(o => o.UpdatedAt)
+                .ThenByDescending(o => o.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

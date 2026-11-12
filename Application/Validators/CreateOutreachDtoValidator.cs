@@ -1,4 +1,5 @@
 ﻿using Core.DTOs.Outreach;
+using Core.Enums;
 using FluentValidation;
 
 namespace Application.Validators
@@ -21,6 +22,11 @@ namespace Application.Validators
                 .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
             RuleFor(x => x.Status).IsInEnum();
+
+            RuleFor(x => x.CancelReason).MaximumLength(200);
+            RuleFor(x => x.CancelReason)
+                .NotEmpty().WithMessage("Add a short reason for cancelling this company.")
+                .When(x => x.Status == OutreachStatus.Cancelled);
         }
     }
 }

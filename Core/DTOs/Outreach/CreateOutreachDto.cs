@@ -22,5 +22,9 @@ namespace Core.DTOs.Outreach
 
         [Required]
         public OutreachStatus Status { get; set; } = OutreachStatus.Researching;
+
+        // A short reason. Needed when the company is created as Cancelled.
+        [StringLength(200)]
+        public string? CancelReason { get; set; }
     }
 }

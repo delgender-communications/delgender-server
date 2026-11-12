@@ -11,6 +11,7 @@ namespace Core.DTOs.Outreach
         public string? PhoneNumber { get; set; }
         public string? Notes { get; set; }
         public OutreachStatus Status { get; set; }
+        public string? CancelReason { get; set; }
 
         public string? PitchDeckFileName { get; set; }
         public string? PitchDeckUrl { get; set; }

@@ -20,8 +20,12 @@ namespace Application.Services
 
         private static readonly ConcurrentDictionary<int, byte> SendsInProgress = new();
 
-        public OutreachService(IOutreachRepository outreachRepository, IStaffRepository staffRepository,
-            ICloudinaryService cloudinaryService, IPitchDeckFetcher pitchDeckFetcher, IOutreachMailer outreachMailer)
+        public OutreachService(
+            IOutreachRepository outreachRepository,
+            IStaffRepository staffRepository,
+            ICloudinaryService cloudinaryService,
+            IPitchDeckFetcher pitchDeckFetcher,
+            IOutreachMailer outreachMailer)
         {
             _outreachRepository = outreachRepository;
             _staffRepository = staffRepository;
@@ -72,6 +76,7 @@ namespace Application.Services
                 PhoneNumber = PhoneNumbers.NormalizeOrNull(Clean(dto.PhoneNumber)),
                 Notes = Clean(dto.Notes),
                 Status = dto.Status,
+                CancelReason = dto.Status == OutreachStatus.Cancelled ? Clean(dto.CancelReason) : null,
                 AddedByStaffId = staff.Id,
                 CreatedAt = now,
                 UpdatedAt = now
@@ -118,10 +123,43 @@ namespace Application.Services
                 changed = true;
             }
 
+            // Cancelling needs a short reason, so the team can see why from the company's page.
+            // A company that was cancelled before reasons existed can still be edited without one.
+            var cancelReason = dto.Status == OutreachStatus.Cancelled ? Clean(dto.CancelReason) : null;
+            if (dto.Status == OutreachStatus.Cancelled
+                && company.Status != OutreachStatus.Cancelled
+                && cancelReason is null)
+            {
+                throw new ArgumentException("Add a short reason for cancelling this company.");
+            }
+
+            var previousReason = company.CancelReason;
+
             if (company.Status != dto.Status)
             {
                 company.Logs.Add(NewLog(staff, StatusChangeMessage(company.Status, dto.Status), now));
                 company.Status = dto.Status;
+                changed = true;
+            }
+
+            if (!string.Equals(previousReason, cancelReason, StringComparison.Ordinal))
+            {
+                // Not worded like a status change, so the company page keeps finding the right entry.
+                if (cancelReason is not null)
+                {
+                    company.Logs.Add(NewLog(
+                        staff,
+                        previousReason is null
+                            ? $"gave the reason for cancelling: \"{cancelReason}\"."
+                            : $"changed the reason for cancelling to \"{cancelReason}\".",
+                        now));
+                }
+                else if (company.Status == OutreachStatus.Cancelled)
+                {
+                    company.Logs.Add(NewLog(staff, "removed the reason for cancelling.", now));
+                }
+
+                company.CancelReason = cancelReason;
                 changed = true;
             }
 
@@ -326,6 +364,7 @@ namespace Application.Services
                 }
                 catch
                 {
+                    // The email is already out, so don't let anyone retry blindly.
                     throw new InvalidOperationException(
                         "The email was sent, but we couldn't update the status. Please mark it as Emailed yourself so nobody sends it twice.");
                 }
@@ -533,6 +572,7 @@ namespace Application.Services
             PhoneNumber = company.PhoneNumber,
             Notes = company.Notes,
             Status = company.Status,
+            CancelReason = company.CancelReason,
             PitchDeckFileName = company.PitchDeckFileName,
             PitchDeckUrl = company.PitchDeckUrl,
             PitchDeckUploadedAt = company.PitchDeckUploadedAt,

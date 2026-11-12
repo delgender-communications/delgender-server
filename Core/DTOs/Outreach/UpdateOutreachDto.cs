@@ -22,5 +22,8 @@ namespace Core.DTOs.Outreach
 
         [Required]
         public OutreachStatus Status { get; set; }
+
+        [StringLength(200)]
+        public string? CancelReason { get; set; }
     }
 }

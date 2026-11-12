@@ -14,6 +14,8 @@ namespace Core.Entities
 
         public OutreachStatus Status { get; set; } = OutreachStatus.Researching;
 
+        public string? CancelReason { get; set; }
+
         public string? PitchDeckUrl { get; set; }
         public string? PitchDeckPublicId { get; set; }
         public string? PitchDeckFileName { get; set; }
