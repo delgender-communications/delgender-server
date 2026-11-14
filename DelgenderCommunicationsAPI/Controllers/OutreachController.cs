@@ -61,7 +61,7 @@ namespace DelgenderCommunicationsAPI.Controllers
         [HttpPatch("{id:int}/notes")]
         public async Task<ActionResult<OutreachDetailDto>> UpdateNotes(int id, [FromBody] UpdateOutreachNotesDto dto)
         {
-            var company = await _outreachService.UpdateNotesAsync(id, dto);
+            var company = await _outreachService.UpdateNotesAsync(id, dto, CurrentStaffId());
             return company is null ? NotFound() : Ok(company);
         }
 

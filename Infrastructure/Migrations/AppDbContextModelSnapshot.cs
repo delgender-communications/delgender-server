@@ -532,6 +532,9 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Website")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AddedByStaffId");
@@ -578,6 +581,39 @@ namespace Infrastructure.Migrations
                     b.HasIndex("StaffId");
 
                     b.ToTable("OutreachLogs");
+                });
+
+            modelBuilder.Entity("Core.Entities.OutreachNoteEditor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("EditCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FirstEditedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("LastEditedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("OutreachCompanyId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StaffId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StaffId");
+
+                    b.HasIndex("OutreachCompanyId", "StaffId")
+                        .IsUnique();
+
+                    b.ToTable("OutreachNoteEditors");
                 });
 
             modelBuilder.Entity("Core.Entities.PageView", b =>
@@ -1171,6 +1207,25 @@ namespace Infrastructure.Migrations
                     b.Navigation("Staff");
                 });
 
+            modelBuilder.Entity("Core.Entities.OutreachNoteEditor", b =>
+                {
+                    b.HasOne("Core.Entities.OutreachCompany", "OutreachCompany")
+                        .WithMany("NoteEditors")
+                        .HasForeignKey("OutreachCompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Staff", "Staff")
+                        .WithMany()
+                        .HasForeignKey("StaffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OutreachCompany");
+
+                    b.Navigation("Staff");
+                });
+
             modelBuilder.Entity("Core.Entities.RefreshToken", b =>
                 {
                     b.HasOne("Core.Entities.Staff", "Staff")
@@ -1289,6 +1344,8 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Entities.OutreachCompany", b =>
                 {
                     b.Navigation("Logs");
+
+                    b.Navigation("NoteEditors");
                 });
 
             modelBuilder.Entity("Core.Entities.ResearchLead", b =>

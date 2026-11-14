@@ -50,6 +50,13 @@ namespace Infrastructure.Repositories
         public Task<List<string>> GetOutreachCompanyNamesAsync() =>
             _db.OutreachCompanies.AsNoTracking().Select(o => o.CompanyName).ToListAsync();
 
+        public Task<List<string>> GetOutreachCompanyWebsitesAsync() =>
+            _db.OutreachCompanies
+                .AsNoTracking()
+                .Where(o => o.Website != null)
+                .Select(o => o.Website!)
+                .ToListAsync();
+
         public async Task AddRangeAsync(IEnumerable<ResearchLead> leads)
         {
             _db.ResearchLeads.AddRange(leads);

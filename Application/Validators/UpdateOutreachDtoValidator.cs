@@ -1,4 +1,5 @@
-﻿using Core.DTOs.Outreach;
+﻿using Application.Services;
+using Core.DTOs.Outreach;
 using FluentValidation;
 
 namespace Application.Validators
@@ -21,6 +22,13 @@ namespace Application.Validators
                 .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
             RuleFor(x => x.Status).IsInEnum();
+
+            RuleFor(x => x.Website)
+                .MaximumLength(300)
+                .Must(value => string.IsNullOrWhiteSpace(value)
+                    || ResearchLeadNormalizer.TryNormalizeWebsite(value, out _, out _))
+                .WithMessage("Enter a valid website, like example.com.");
+
             RuleFor(x => x.CancelReason).MaximumLength(200);
         }
     }

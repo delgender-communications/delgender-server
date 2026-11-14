@@ -10,7 +10,7 @@ namespace Core.Interfaces.Services
         Task<OutreachDetailDto?> GetByIdAsync(int id);
         Task<OutreachDetailDto> CreateAsync(CreateOutreachDto dto, int staffId);
         Task<OutreachDetailDto?> UpdateAsync(int id, UpdateOutreachDto dto, int staffId);
-        Task<OutreachDetailDto?> UpdateNotesAsync(int id, UpdateOutreachNotesDto dto);
+        Task<OutreachDetailDto?> UpdateNotesAsync(int id, UpdateOutreachNotesDto dto, int staffId);
         Task<OutreachDetailDto?> UploadPitchDeckAsync(int id, Stream fileStream, string fileName, int staffId);
         Task<(byte[] Bytes, string FileName)?> DownloadPitchDeckAsync(int id);
         Task<OutreachDetailDto?> UploadReportAsync(int id, Stream fileStream, string fileName, int staffId);

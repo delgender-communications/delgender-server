@@ -17,6 +17,9 @@ namespace Core.DTOs.Outreach
         [StringLength(30)]
         public string? PhoneNumber { get; set; }
 
+        [StringLength(300)]
+        public string? Website { get; set; }
+
         [StringLength(4000)]
         public string? Notes { get; set; }
 

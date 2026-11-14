@@ -20,6 +20,7 @@ namespace Infrastructure.Data
         public DbSet<Feedback> Feedbacks => Set<Feedback>();
         public DbSet<OutreachCompany> OutreachCompanies => Set<OutreachCompany>();
         public DbSet<OutreachLog> OutreachLogs => Set<OutreachLog>();
+        public DbSet<OutreachNoteEditor> OutreachNoteEditors => Set<OutreachNoteEditor>();
         public DbSet<TeamDocument> TeamDocuments => Set<TeamDocument>();
         public DbSet<ResearchLead> ResearchLeads => Set<ResearchLead>();
         public DbSet<ResearchLeadEvidence> ResearchLeadEvidenceItems => Set<ResearchLeadEvidence>();
@@ -169,6 +170,22 @@ namespace Infrastructure.Data
 
             modelBuilder.Entity<OutreachCompany>()
                 .HasIndex(o => o.Status);
+
+            modelBuilder.Entity<OutreachNoteEditor>()
+                .HasOne(e => e.OutreachCompany)
+                .WithMany(o => o.NoteEditors)
+                .HasForeignKey(e => e.OutreachCompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OutreachNoteEditor>()
+                .HasOne(e => e.Staff)
+                .WithMany()
+                .HasForeignKey(e => e.StaffId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OutreachNoteEditor>()
+                .HasIndex(e => new { e.OutreachCompanyId, e.StaffId })
+                .IsUnique();
 
             modelBuilder.Entity<OutreachLog>()
                 .HasOne(l => l.OutreachCompany)

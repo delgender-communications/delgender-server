@@ -10,6 +10,8 @@ namespace Core.Entities
         public string? ContactName { get; set; }
         public string? Email { get; set; }
         public string? PhoneNumber { get; set; }
+        public string? Website { get; set; }
+
         public string? Notes { get; set; }
 
         public OutreachStatus Status { get; set; } = OutreachStatus.Researching;
@@ -33,6 +35,8 @@ namespace Core.Entities
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         public ICollection<OutreachLog> Logs { get; set; } = new List<OutreachLog>();
+
+        public ICollection<OutreachNoteEditor> NoteEditors { get; set; } = new List<OutreachNoteEditor>();
 
     }
 }

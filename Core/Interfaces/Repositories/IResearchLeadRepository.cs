@@ -13,6 +13,7 @@ namespace Core.Interfaces.Repositories
         Task<List<ResearchLead>> FindExistingAsync(IReadOnlyCollection<string> hosts, IReadOnlyCollection<string> nameKeys);
 
         Task<List<string>> GetOutreachCompanyNamesAsync();
+        Task<List<string>> GetOutreachCompanyWebsitesAsync();
         Task AddRangeAsync(IEnumerable<ResearchLead> leads);
         Task SaveChangesAsync();
     }

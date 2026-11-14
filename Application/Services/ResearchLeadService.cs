@@ -27,6 +27,8 @@ namespace Application.Services
             _staffRepository = staffRepository;
         }
 
+        // What the research agent calls. Leads we already know about are skipped, not
+        // errors, so the agent can safely run again and again.
         public async Task<IngestResultDto> IngestAsync(IngestResearchLeadsDto dto)
         {
             var result = new IngestResultDto();
@@ -68,17 +70,12 @@ namespace Application.Services
             {
                 await _leadRepository.AddRangeAsync(toAdd);
 
+                // One update per run, not one per lead.
                 var research = toAdd.Count(l => l.NeedsResearch);
                 var recommended = toAdd.Count - research;
                 var parts = new List<string>();
-                if (recommended > 0)
-                {
-                    parts.Add($"{recommended} recommended");
-                }
-                if (research > 0)
-                {
-                    parts.Add($"{research} to research");
-                }
+                if (recommended > 0) parts.Add($"{recommended} recommended");
+                if (research > 0) parts.Add($"{research} to research");
 
                 await _notificationService.NotifyEveryoneAsync(
                     NotificationType.NewLead,
@@ -119,8 +116,8 @@ namespace Application.Services
             return ToDto(saved!);
         }
 
-        public async Task<PagedResultDto<ResearchLeadDto>> GetAllAsync(int page, int pageSize, ResearchLeadStatus? status,
-            ResearchLeadCase? leadCase, bool? needsResearch = null)
+        public async Task<PagedResultDto<ResearchLeadDto>> GetAllAsync(
+            int page, int pageSize, ResearchLeadStatus? status, ResearchLeadCase? leadCase, bool? needsResearch = null)
         {
             if (page < 1) page = 1;
             if (pageSize is < 1 or > 100) pageSize = 15;
@@ -145,6 +142,8 @@ namespace Application.Services
             return lead is null ? null : ToDto(lead);
         }
 
+        // Accepting creates the outreach company and marks the lead in one save, so
+        // you can never end up with one without the other.
         public async Task<ResearchLeadDto?> AcceptAsync(int id, int staffId)
         {
             var lead = await _leadRepository.GetByIdWithDetailsAsync(id);
@@ -164,6 +163,7 @@ namespace Application.Services
                 CompanyName = lead.CompanyName,
                 Email = lead.Email,
                 PhoneNumber = lead.PhoneNumber,
+                Website = lead.Website,
                 Notes = BuildNotes(lead),
                 Status = OutreachStatus.Researching,
                 AddedByStaffId = staff.Id,
@@ -214,6 +214,8 @@ namespace Application.Services
             return ToDto(lead);
         }
 
+        // ---------- helpers ----------
+
         private sealed record Prepared(ResearchLeadInputDto Input, string? Website, string? Host, string NameKey);
 
         private static Prepared Prepare(ResearchLeadInputDto input)
@@ -230,8 +232,12 @@ namespace Application.Services
             return new Prepared(input, website, host, ResearchLeadNormalizer.NameKey(input.CompanyName));
         }
 
-        private static string? SkipReason(Prepared item, List<ResearchLead> existing, HashSet<string> outreachKeys,
-            HashSet<string> seenHosts, HashSet<string> seenKeys)
+        private static string? SkipReason(
+            Prepared item,
+            List<ResearchLead> existing,
+            HashSet<string> outreachKeys,
+            HashSet<string> seenHosts,
+            HashSet<string> seenKeys)
         {
             var match = existing.FirstOrDefault(e =>
                 e.NameKey == item.NameKey ||
@@ -244,7 +250,8 @@ namespace Application.Services
                     : "Already a lead.";
             }
 
-            if (outreachKeys.Contains(item.NameKey))
+            if (outreachKeys.Contains(item.NameKey) ||
+                (item.Host is not null && outreachKeys.Contains(OutreachHostKey(item.Host))))
             {
                 return "Already in outreach.";
             }
@@ -260,11 +267,27 @@ namespace Application.Services
         private async Task<HashSet<string>> LoadOutreachKeysAsync()
         {
             var names = await _leadRepository.GetOutreachCompanyNamesAsync();
-            return names
+            var keys = names
                 .Select(ResearchLeadNormalizer.NameKey)
                 .Where(key => key.Length > 0)
                 .ToHashSet();
+
+            // Websites too, so a company added by hand with a website isn't suggested again
+            // under a slightly different name.
+            foreach (var website in await _leadRepository.GetOutreachCompanyWebsitesAsync())
+            {
+                if (ResearchLeadNormalizer.TryNormalizeWebsite(website, out _, out var host) &&
+                    ResearchLeadNormalizer.DedupeHost(host) is { } dedupeHost)
+                {
+                    keys.Add(OutreachHostKey(dedupeHost));
+                }
+            }
+
+            return keys;
         }
+
+        // Kept in the same set as the names, so a host can never be mistaken for a name.
+        private static string OutreachHostKey(string host) => "host:" + host;
 
         private static ResearchLead Build(Prepared item, int? addedByStaffId, string? runId)
         {
@@ -325,27 +348,11 @@ namespace Application.Services
             notes.AppendLine(lead.NeedsResearch
                 ? $"Why we flagged it: Needs research ({CaseLabel(lead.Case)})"
                 : $"Why we flagged it: {CaseLabel(lead.Case)}");
-
-            if (!string.IsNullOrWhiteSpace(lead.ResearchReason))
-            {
-                notes.AppendLine($"What to check: {lead.ResearchReason}");
-            }
-            if (lead.SiteStack is not null)
-            {
-                notes.AppendLine($"Site built with: {lead.SiteStack}");
-            }
-            if (lead.Website is not null)
-            {
-                notes.AppendLine($"Website: {lead.Website}");
-            }
-            if (lead.Industry is not null)
-            {
-                notes.AppendLine($"Industry: {lead.Industry}");
-            }
-            if (lead.Location is not null)
-            {
-                notes.AppendLine($"Location: {lead.Location}");
-            }
+            if (!string.IsNullOrWhiteSpace(lead.ResearchReason)) notes.AppendLine($"What to check: {lead.ResearchReason}");
+            if (lead.SiteStack is not null) notes.AppendLine($"Site built with: {lead.SiteStack}");
+            if (lead.Website is not null) notes.AppendLine($"Website: {lead.Website}");
+            if (lead.Industry is not null) notes.AppendLine($"Industry: {lead.Industry}");
+            if (lead.Location is not null) notes.AppendLine($"Location: {lead.Location}");
 
             if (lead.Evidence.Count > 0)
             {

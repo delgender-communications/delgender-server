@@ -15,9 +15,9 @@ namespace Infrastructure.Repositories
             return await Filtered(status)
                 .AsNoTracking()
                 .OrderBy(o =>
-                    o.Status == OutreachStatus.Ready ? 0 :
-                    o.Status == OutreachStatus.Researching ? 1 :
-                    o.Status == OutreachStatus.Emailed ? 2 : 3)
+                o.Status == OutreachStatus.Ready ? 0 :
+                o.Status == OutreachStatus.Researching ? 1 :
+                o.Status == OutreachStatus.Emailed ? 2 : 3)
                 .ThenByDescending(o => o.UpdatedAt)
                 .ThenByDescending(o => o.Id)
                 .Skip((page - 1) * pageSize)
@@ -30,16 +30,18 @@ namespace Infrastructure.Repositories
 
         public Task<OutreachCompany?> GetByIdWithDetailsAsync(int id) =>
             _db.OutreachCompanies
-                .Include(o => o.AddedByStaff)
-                .Include(o => o.Logs)
-                .FirstOrDefaultAsync(o => o.Id == id);
+            .Include(o => o.AddedByStaff)
+            .Include(o => o.Logs)
+            .Include(o => o.NoteEditors)
+            .ThenInclude(e => e.Staff)
+            .FirstOrDefaultAsync(o => o.Id == id);
 
         public Task<ResearchLead?> GetSourceLeadAsync(int outreachCompanyId) =>
             _db.ResearchLeads
-                .AsNoTracking()
-                .Include(l => l.Evidence)
-                .Include(l => l.AddedByStaff)
-                .FirstOrDefaultAsync(l => l.OutreachCompanyId == outreachCompanyId);
+            .AsNoTracking()
+            .Include(l => l.Evidence)
+            .Include(l => l.AddedByStaff)
+            .FirstOrDefaultAsync(l => l.OutreachCompanyId == outreachCompanyId);
 
         public Task SaveChangesAsync() => _db.SaveChangesAsync();
 

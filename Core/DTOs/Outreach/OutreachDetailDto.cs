@@ -9,6 +9,7 @@ namespace Core.DTOs.Outreach
         public string? ContactName { get; set; }
         public string? Email { get; set; }
         public string? PhoneNumber { get; set; }
+        public string? Website { get; set; }
         public string? Notes { get; set; }
         public OutreachStatus Status { get; set; }
         public string? CancelReason { get; set; }
@@ -29,5 +30,6 @@ namespace Core.DTOs.Outreach
         public OutreachResearchDto? Research { get; set; }
 
         public List<OutreachLogDto> Logs { get; set; } = new();
+        public List<OutreachNoteEditorDto> NoteEditors { get; set; } = new();
     }
 }

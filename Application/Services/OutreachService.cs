@@ -74,6 +74,7 @@ namespace Application.Services
                 ContactName = Clean(dto.ContactName),
                 Email = Clean(dto.Email),
                 PhoneNumber = PhoneNumbers.NormalizeOrNull(Clean(dto.PhoneNumber)),
+                Website = NormalizeWebsite(dto.Website),
                 Notes = Clean(dto.Notes),
                 Status = dto.Status,
                 CancelReason = dto.Status == OutreachStatus.Cancelled ? Clean(dto.CancelReason) : null,
@@ -83,6 +84,11 @@ namespace Application.Services
             };
 
             company.Logs.Add(NewLog(staff, AddedMessage(dto.Status), now));
+
+            if (company.Notes is not null)
+            {
+                RecordNoteEdit(company, staff, now);
+            }
 
             company = await _outreachRepository.CreateAsync(company);
             company.AddedByStaff = staff;
@@ -115,16 +121,17 @@ namespace Application.Services
             changed |= ApplyOptional(company, staff, now, "contact", company.ContactName, Clean(dto.ContactName), value => company.ContactName = value);
             changed |= ApplyOptional(company, staff, now, "email", company.Email, Clean(dto.Email), value => company.Email = value);
             changed |= ApplyOptional(company, staff, now, "phone number", company.PhoneNumber, PhoneNumbers.NormalizeOrNull(Clean(dto.PhoneNumber)), value => company.PhoneNumber = value);
+            changed |= ApplyOptional(company, staff, now, "website", company.Website, NormalizeWebsite(dto.Website), value => company.Website = value);
 
             var notes = Clean(dto.Notes);
             if (!string.Equals(company.Notes, notes, StringComparison.Ordinal))
             {
+                company.Logs.Add(NewLog(staff, DescribeNotesChange(company.Notes, notes), now));
+                RecordNoteEdit(company, staff, now);
                 company.Notes = notes;
                 changed = true;
             }
 
-            // Cancelling needs a short reason, so the team can see why from the company's page.
-            // A company that was cancelled before reasons existed can still be edited without one.
             var cancelReason = dto.Status == OutreachStatus.Cancelled ? Clean(dto.CancelReason) : null;
             if (dto.Status == OutreachStatus.Cancelled
                 && company.Status != OutreachStatus.Cancelled
@@ -144,7 +151,6 @@ namespace Application.Services
 
             if (!string.Equals(previousReason, cancelReason, StringComparison.Ordinal))
             {
-                // Not worded like a status change, so the company page keeps finding the right entry.
                 if (cancelReason is not null)
                 {
                     company.Logs.Add(NewLog(
@@ -172,7 +178,7 @@ namespace Application.Services
             return ToDetail(company);
         }
 
-        public async Task<OutreachDetailDto?> UpdateNotesAsync(int id, UpdateOutreachNotesDto dto)
+        public async Task<OutreachDetailDto?> UpdateNotesAsync(int id, UpdateOutreachNotesDto dto, int staffId)
         {
             var company = await _outreachRepository.GetByIdWithDetailsAsync(id);
             if (company is null)
@@ -180,11 +186,18 @@ namespace Application.Services
                 return null;
             }
 
+            var staff = await RequireStaffAsync(staffId);
+
             var notes = Clean(dto.Notes);
             if (!string.Equals(company.Notes, notes, StringComparison.Ordinal))
             {
+                var now = DateTime.UtcNow;
+
+                company.Logs.Add(NewLog(staff, DescribeNotesChange(company.Notes, notes), now));
+                RecordNoteEdit(company, staff, now);
+
                 company.Notes = notes;
-                company.UpdatedAt = DateTime.UtcNow;
+                company.UpdatedAt = now;
                 await _outreachRepository.SaveChangesAsync();
             }
 
@@ -364,7 +377,6 @@ namespace Application.Services
                 }
                 catch
                 {
-                    // The email is already out, so don't let anyone retry blindly.
                     throw new InvalidOperationException(
                         "The email was sent, but we couldn't update the status. Please mark it as Emailed yourself so nobody sends it twice.");
                 }
@@ -445,6 +457,32 @@ namespace Application.Services
             return staff;
         }
 
+        private static void RecordNoteEdit(OutreachCompany company, Staff staff, DateTime now)
+        {
+            var editor = company.NoteEditors.FirstOrDefault(e => e.StaffId == staff.Id);
+
+            if (editor is null)
+            {
+                company.NoteEditors.Add(new OutreachNoteEditor
+                {
+                    StaffId = staff.Id,
+                    Staff = staff,
+                    EditCount = 1,
+                    FirstEditedAt = now,
+                    LastEditedAt = now
+                });
+                return;
+            }
+
+            editor.EditCount++;
+            editor.LastEditedAt = now;
+        }
+
+        private static string DescribeNotesChange(string? from, string? to) =>
+            from is null ? "added notes." :
+            to is null ? "cleared the notes." :
+            "updated the notes.";
+
         private static bool ApplyOptional(
             OutreachCompany company,
             Staff staff,
@@ -523,6 +561,9 @@ namespace Application.Services
             CreatedAt = at
         };
 
+        private static string? NormalizeWebsite(string? input) =>
+            ResearchLeadNormalizer.TryNormalizeWebsite(input, out var url, out _) ? url : null;
+
         private static string? Clean(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -570,6 +611,7 @@ namespace Application.Services
             ContactName = company.ContactName,
             Email = company.Email,
             PhoneNumber = company.PhoneNumber,
+            Website = company.Website,
             Notes = company.Notes,
             Status = company.Status,
             CancelReason = company.CancelReason,
@@ -595,6 +637,18 @@ namespace Application.Services
                     ActorName = l.ActorName,
                     Message = l.Message,
                     CreatedAt = l.CreatedAt
+                })
+                .ToList(),
+            NoteEditors = company.NoteEditors
+                .Where(e => e.Staff is not null)
+                .OrderByDescending(e => e.LastEditedAt)
+                .Select(e => new OutreachNoteEditorDto
+                {
+                    StaffId = e.StaffId,
+                    Name = $"{e.Staff.Name} {e.Staff.Surname}".Trim(),
+                    ProfilePictureUrl = e.Staff.ProfilePictureUrl,
+                    EditCount = e.EditCount,
+                    LastEditedAt = e.LastEditedAt
                 })
                 .ToList()
         };
